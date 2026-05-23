@@ -2364,7 +2364,10 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
     { value: "green", label: "Skoggrønn", color: "#1f7a4c" },
     { value: "berry", label: "Bærtoner", color: "#b146c2" }
   ];
-  const isUserAdmin = authSession?.user?.role === "admin";
+  const sessionRole = getSessionRole(authSession);
+  const isSessionAdmin = sessionRole === "admin";
+  const [adminAccessStatus, setAdminAccessStatus] = React.useState(isSessionAdmin ? "granted" : "checking");
+  const isUserAdmin = isSessionAdmin || adminAccessStatus === "granted";
   const selectedUser = users.find((user) => user.id === selectedUserId) ?? null;
   const settingsNavItems = [
     { key: "catalogs", label: "Registere" },
@@ -2374,18 +2377,22 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   ];
 
   React.useEffect(() => {
-    if (activeSettingsTab !== "users" || !isUserAdmin) {
+    setAdminAccessStatus(isSessionAdmin ? "granted" : "checking");
+  }, [authSession?.user?.id, authSession?.user?.email, isSessionAdmin]);
+
+  React.useEffect(() => {
+    if (activeSettingsTab !== "users") {
       return;
     }
     loadUsers();
-  }, [activeSettingsTab, isUserAdmin]);
+  }, [activeSettingsTab]);
 
   React.useEffect(() => {
-    if (activeSettingsTab !== "apiKeys" || !isUserAdmin) {
+    if (activeSettingsTab !== "apiKeys") {
       return;
     }
     loadApiKeys();
-  }, [activeSettingsTab, isUserAdmin]);
+  }, [activeSettingsTab]);
 
   React.useEffect(() => {
     if (!selectedUser) {
@@ -2409,10 +2416,15 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
     try {
       setIsUsersLoading(true);
       const response = await fetch("/api/users");
+      if (response.status === 403) {
+        setAdminAccessStatus("denied");
+        return;
+      }
       if (!response.ok) {
         throw new Error("Klarte ikke å hente brukere.");
       }
       const payload = await response.json();
+      setAdminAccessStatus("granted");
       setUsers(payload.users ?? []);
     } catch (error) {
       showToast(error.message ?? "Klarte ikke å hente brukere.", "error");
@@ -2479,10 +2491,15 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
     try {
       setIsApiKeysLoading(true);
       const response = await fetch("/api/api-keys");
+      if (response.status === 403) {
+        setAdminAccessStatus("denied");
+        return;
+      }
       if (!response.ok) {
         throw new Error("Klarte ikke å hente API-nøkler.");
       }
       const payload = await response.json();
+      setAdminAccessStatus("granted");
       setApiKeys(payload.apiKeys ?? []);
     } catch (error) {
       showToast(error.message ?? "Klarte ikke å hente API-nøkler.", "error");
@@ -2531,7 +2548,7 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
         <Card className="settingsCard settingsCard--fullWidth" appearance="filled-alternative">
           <div className="headerStack compact">
             <Title3>API-nøkler</Title3>
-            <Body1>Du må være administrator for å administrere API-nøkler.</Body1>
+            <Body1>{adminAccessStatus === "checking" ? "Kontrollerer administratorrettigheter..." : "Du må være administrator for å administrere API-nøkler."}</Body1>
           </div>
         </Card>
       );
@@ -2620,7 +2637,7 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
         <Card className="settingsCard settingsCard--fullWidth" appearance="filled-alternative">
           <div className="headerStack compact">
             <Title3>Brukere</Title3>
-            <Body1>Du må være administrator for å administrere brukere.</Body1>
+            <Body1>{adminAccessStatus === "checking" ? "Kontrollerer administratorrettigheter..." : "Du må være administrator for å administrere brukere."}</Body1>
           </div>
         </Card>
       );
@@ -3174,7 +3191,21 @@ function roleLabel(role) {
     admin: "Administrator",
     editor: "Redaktør",
     viewer: "Lesetilgang"
-  }[role] ?? "Lesetilgang";
+  }[getNormalizedRole(role)] ?? "Lesetilgang";
+}
+
+function getSessionRole(authSession) {
+  return getNormalizedRole(
+    authSession?.user?.role ??
+      authSession?.role ??
+      authSession?.user?.appRole ??
+      authSession?.user?.claims?.role ??
+      authSession?.user?.claims?.roles?.[0]
+  );
+}
+
+function getNormalizedRole(role) {
+  return String(role ?? "").trim().toLowerCase();
 }
 
 function OrganizationStructurePage({ appState, currentScreen, onAction, openDialog, selectedOrgNode, selectedOrgNodeId, setSelectedOrgNodeId, showToast, updateDraft }) {
