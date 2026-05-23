@@ -63,14 +63,21 @@ app.get("/api/health", async (_req, res) => {
   }
 });
 
-app.get("/api/auth/session", (req, res) => {
-  const session = readAuthSession(req);
-  res.json({
-    authRequired: authConfig.required,
-    authenticated: Boolean(session),
-    user: session?.user ?? null,
-    providers: authConfig.providers.map(({ key, label, type }) => ({ key, label, type }))
-  });
+app.get("/api/auth/session", async (req, res) => {
+  try {
+    const session = await refreshAuthSession(readAuthSession(req));
+    if (!session) {
+      clearAuthSessionCookie(res);
+    }
+    res.json({
+      authRequired: authConfig.required,
+      authenticated: Boolean(session),
+      user: session?.user ?? null,
+      providers: authConfig.providers.map(({ key, label, type }) => ({ key, label, type }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: "auth_session_failed", detail: error.message });
+  }
 });
 
 app.post("/api/auth/local", async (req, res) => {
@@ -1495,7 +1502,7 @@ async function requireAuthenticatedRequest(req, res, next) {
     return;
   }
 
-  const session = readAuthSession(req);
+  const session = await refreshAuthSession(readAuthSession(req));
   if (session) {
     req.authUser = session.user;
     next();
@@ -1516,6 +1523,43 @@ async function requireAuthenticatedRequest(req, res, next) {
   }
 
   res.status(401).json({ error: "authentication_required" });
+}
+
+async function refreshAuthSession(session) {
+  if (!session?.user || session.user.provider === "api_key") {
+    return session;
+  }
+
+  const result = await pool.query(
+    `
+      SELECT *
+      FROM app_users
+      WHERE status = 'active'
+        AND (id = $1 OR LOWER(email) = $2)
+      LIMIT 1
+    `,
+    [session.user.id ?? "", String(session.user.email ?? "").toLowerCase()]
+  );
+  const account = result.rows[0];
+  if (!account) {
+    if (session.sessionId) {
+      authSessionStore.delete(session.sessionId);
+    }
+    return null;
+  }
+
+  const refreshedSession = {
+    ...session,
+    user: userAccountToSessionUser(account, session.user.provider, session.user)
+  };
+  if (session.sessionId) {
+    authSessionStore.set(session.sessionId, {
+      user: refreshedSession.user,
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt
+    });
+  }
+  return refreshedSession;
 }
 
 function requireAdminRequest(req, res, next) {
@@ -1553,7 +1597,7 @@ function readAuthSession(req) {
     return null;
   }
 
-  return session;
+  return { ...session, sessionId };
 }
 
 function setAuthSessionCookie(res, sessionId, expiresAt) {
