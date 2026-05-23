@@ -3,10 +3,13 @@ frontend/dist/
 public/generated/
 output/
 .playwright-cli/
+.vendor/
+__pycache__/
 
 .env
 .env.*
 !.env.example
+secrets.md
 
 *.log
 *.err
