@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import { createRemoteJWKSet, jwtVerify } from "jose";
@@ -45,6 +45,7 @@ const pool = new Pool(resolveDatabaseConfig());
 await waitForDatabase(pool);
 await ensureDatabaseSchema(pool);
 await seedPersistedState(pool);
+await seedUserAccounts(pool);
 
 const app = express();
 app.disable("x-powered-by");
@@ -72,7 +73,7 @@ app.get("/api/auth/session", (req, res) => {
   });
 });
 
-app.post("/api/auth/local", (req, res) => {
+app.post("/api/auth/local", async (req, res) => {
   try {
     if (!authConfig.required) {
       res.json({ ok: true });
@@ -86,22 +87,15 @@ app.post("/api/auth/local", (req, res) => {
 
     const identifier = String(req.body?.identifier ?? "").trim().toLowerCase();
     const password = String(req.body?.password ?? "");
-    const expectedIdentifiers = [authConfig.localProvider.username, authConfig.localProvider.email]
-      .filter(Boolean)
-      .map((value) => value.toLowerCase());
+    const account = await findLocalUserAccount(pool, identifier);
 
-    if (!expectedIdentifiers.includes(identifier) || !verifyLocalPassword(password)) {
+    if (!account || !verifyUserPassword(password, account.password_hash)) {
       res.status(401).json({ error: "invalid_credentials" });
       return;
     }
 
-    const user = {
-      provider: "local",
-      id: authConfig.localProvider.username,
-      name: authConfig.localProvider.name,
-      email: authConfig.localProvider.email
-    };
-    assertUserIsAllowed(user);
+    await markUserLogin(pool, account.id, "local");
+    const user = userAccountToSessionUser(account, "local");
     createAuthSession(res, user);
     res.json({ ok: true, user });
   } catch (error) {
@@ -198,9 +192,15 @@ app.get("/api/auth/callback/:provider", async (req, res) => {
 
     const tokenPayload = await tokenResponse.json();
     const claims = await verifyIdentityToken(provider, discovery, tokenPayload.id_token, attempt.nonce);
-    const user = normalizeAuthenticatedUser(provider, claims);
-    assertUserIsAllowed(user);
+    const identityUser = normalizeAuthenticatedUser(provider, claims);
+    assertUserIsAllowed(identityUser);
+    const account = await findExternalUserAccount(pool, identityUser.email);
+    if (!account) {
+      throw new Error(`External user ${identityUser.email} is not configured in SystemKontroll.`);
+    }
 
+    await markUserLogin(pool, account.id, provider.key);
+    const user = userAccountToSessionUser(account, provider.key, identityUser);
     createAuthSession(res, user);
     res.redirect(attempt.returnTo);
   } catch (error) {
@@ -240,7 +240,56 @@ app.get("/api/bootstrap", (_req, res) => {
   });
 });
 
-app.post("/api/files", async (req, res) => {
+app.get("/api/users", requireAdminRequest, async (_req, res) => {
+  try {
+    const users = await listUserAccounts(pool);
+    res.json({ users });
+  } catch (error) {
+    res.status(500).json({ error: "users_read_failed", detail: error.message });
+  }
+});
+
+app.post("/api/users", requireAdminRequest, async (req, res) => {
+  try {
+    const user = await createUserAccount(pool, req.body);
+    res.status(201).json({ user });
+  } catch (error) {
+    const statusCode = error?.code === "invalid_user_payload" || error?.code === "duplicate_user" ? 400 : 500;
+    res.status(statusCode).json({ error: "user_create_failed", detail: error.message });
+  }
+});
+
+app.put("/api/users/:userId", requireAdminRequest, async (req, res) => {
+  try {
+    const user = await updateUserAccount(pool, req.params.userId, req.body);
+    if (!user) {
+      res.status(404).json({ error: "user_not_found" });
+      return;
+    }
+    removeAuthSessionsForUser(user.id);
+    res.json({ user });
+  } catch (error) {
+    const statusCode = error?.code === "invalid_user_payload" || error?.code === "duplicate_user" ? 400 : 500;
+    res.status(statusCode).json({ error: "user_update_failed", detail: error.message });
+  }
+});
+
+app.post("/api/users/:userId/password", requireAdminRequest, async (req, res) => {
+  try {
+    const user = await updateUserPassword(pool, req.params.userId, req.body?.password);
+    if (!user) {
+      res.status(404).json({ error: "user_not_found" });
+      return;
+    }
+    removeAuthSessionsForUser(user.id);
+    res.json({ user });
+  } catch (error) {
+    const statusCode = error?.code === "invalid_user_payload" ? 400 : 500;
+    res.status(statusCode).json({ error: "password_update_failed", detail: error.message });
+  }
+});
+
+app.post("/api/files", requireEditorRequest, async (req, res) => {
   try {
     const uploadedFile = await createStoredFile(pool, req.body);
     res.status(201).json(uploadedFile);
@@ -267,7 +316,7 @@ app.get("/api/files/:fileId", async (req, res) => {
   }
 });
 
-app.put("/api/state", async (req, res) => {
+app.put("/api/state", requireEditorRequest, async (req, res) => {
   try {
     const nextState = normalizePersistedState(req.body);
     const savedState = await writePersistedState(pool, nextState);
@@ -328,6 +377,34 @@ async function ensureDatabaseSchema(clientPool) {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await clientPool.query(`
+    CREATE TABLE IF NOT EXISTS app_users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      username TEXT,
+      display_name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('admin', 'editor', 'viewer')),
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
+      local_enabled BOOLEAN NOT NULL DEFAULT false,
+      password_hash TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_login_at TIMESTAMPTZ,
+      last_login_provider TEXT
+    )
+  `);
+
+  await clientPool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS app_users_email_unique_idx
+    ON app_users (LOWER(email))
+  `);
+
+  await clientPool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_unique_idx
+    ON app_users (LOWER(username))
+    WHERE username IS NOT NULL AND username <> ''
+  `);
 }
 
 async function seedPersistedState(clientPool) {
@@ -343,6 +420,29 @@ async function seedPersistedState(clientPool) {
       VALUES (1, $1::jsonb, NOW())
     `,
     [JSON.stringify(initialState)]
+  );
+}
+
+async function seedUserAccounts(clientPool) {
+  const existing = await clientPool.query("SELECT id FROM app_users LIMIT 1");
+  if (existing.rowCount > 0 || !authConfig.localProvider.enabled || !authConfig.localProvider.hasBootstrapPassword) {
+    return;
+  }
+
+  await clientPool.query(
+    `
+      INSERT INTO app_users (
+        id, email, username, display_name, role, status, local_enabled, password_hash, created_at, updated_at
+      )
+      VALUES ($1, $2, $3, $4, 'admin', 'active', true, $5, NOW(), NOW())
+    `,
+    [
+      randomUUID(),
+      authConfig.localProvider.email,
+      authConfig.localProvider.username,
+      authConfig.localProvider.name,
+      hashInitialLocalPassword(authConfig.localProvider)
+    ]
   );
 }
 
@@ -464,7 +564,8 @@ function resolveLocalProvider() {
   const hasPassword = Boolean(password || passwordSha256);
 
   return {
-    enabled: enabled && hasPassword,
+    enabled,
+    hasBootstrapPassword: hasPassword,
     username: String(process.env.AUTH_LOCAL_USERNAME ?? "admin").trim() || "admin",
     email: String(process.env.AUTH_LOCAL_EMAIL ?? "admin@example.no").trim().toLowerCase() || "admin@example.no",
     name: String(process.env.AUTH_LOCAL_NAME ?? "SystemKontroll administrator").trim() || "SystemKontroll administrator",
@@ -589,6 +690,257 @@ function assertUserIsAllowed(user) {
   throw new Error(`User ${email} is not allowed to sign in.`);
 }
 
+async function listUserAccounts(clientPool) {
+  const result = await clientPool.query(`
+    SELECT id, email, username, display_name, role, status, local_enabled, created_at, updated_at, last_login_at, last_login_provider
+    FROM app_users
+    ORDER BY LOWER(display_name), LOWER(email)
+  `);
+  return result.rows.map(serializeUserAccount);
+}
+
+async function findLocalUserAccount(clientPool, identifier) {
+  const normalizedIdentifier = String(identifier ?? "").trim().toLowerCase();
+  if (!normalizedIdentifier) {
+    return null;
+  }
+
+  const result = await clientPool.query(
+    `
+      SELECT *
+      FROM app_users
+      WHERE status = 'active'
+        AND local_enabled = true
+        AND password_hash IS NOT NULL
+        AND (LOWER(email) = $1 OR LOWER(username) = $1)
+      LIMIT 1
+    `,
+    [normalizedIdentifier]
+  );
+  return result.rows[0] ?? null;
+}
+
+async function findExternalUserAccount(clientPool, email) {
+  const normalizedEmail = normalizeUserEmail(email);
+  if (!normalizedEmail) {
+    return null;
+  }
+
+  const result = await clientPool.query(
+    `
+      SELECT *
+      FROM app_users
+      WHERE status = 'active'
+        AND LOWER(email) = $1
+      LIMIT 1
+    `,
+    [normalizedEmail]
+  );
+  return result.rows[0] ?? null;
+}
+
+async function createUserAccount(clientPool, payload) {
+  const normalized = normalizeUserPayload(payload, { requirePassword: Boolean(payload?.localEnabled) });
+  const passwordHash = normalized.localEnabled ? hashPassword(normalized.password) : null;
+
+  try {
+    const result = await clientPool.query(
+      `
+        INSERT INTO app_users (
+          id, email, username, display_name, role, status, local_enabled, password_hash, created_at, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        RETURNING id, email, username, display_name, role, status, local_enabled, created_at, updated_at, last_login_at, last_login_provider
+      `,
+      [
+        randomUUID(),
+        normalized.email,
+        normalized.username || null,
+        normalized.displayName,
+        normalized.role,
+        normalized.status,
+        normalized.localEnabled,
+        passwordHash
+      ]
+    );
+    return serializeUserAccount(result.rows[0]);
+  } catch (error) {
+    if (error?.code === "23505") {
+      const duplicateError = new Error("E-post eller brukernavn finnes allerede.");
+      duplicateError.code = "duplicate_user";
+      throw duplicateError;
+    }
+    throw error;
+  }
+}
+
+async function updateUserAccount(clientPool, userId, payload) {
+  const normalized = normalizeUserPayload(payload, { partial: true });
+  await assertActiveAdminWillRemain(clientPool, userId, normalized);
+
+  try {
+    const result = await clientPool.query(
+      `
+        UPDATE app_users
+        SET email = $2,
+            username = $3,
+            display_name = $4,
+            role = $5,
+            status = $6,
+            local_enabled = $7,
+            password_hash = CASE WHEN $7 THEN password_hash ELSE NULL END,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING id, email, username, display_name, role, status, local_enabled, created_at, updated_at, last_login_at, last_login_provider
+      `,
+      [
+        userId,
+        normalized.email,
+        normalized.username || null,
+        normalized.displayName,
+        normalized.role,
+        normalized.status,
+        normalized.localEnabled
+      ]
+    );
+    return result.rows[0] ? serializeUserAccount(result.rows[0]) : null;
+  } catch (error) {
+    if (error?.code === "23505") {
+      const duplicateError = new Error("E-post eller brukernavn finnes allerede.");
+      duplicateError.code = "duplicate_user";
+      throw duplicateError;
+    }
+    throw error;
+  }
+}
+
+async function assertActiveAdminWillRemain(clientPool, userId, normalized) {
+  if (normalized.role === "admin" && normalized.status === "active") {
+    return;
+  }
+
+  const result = await clientPool.query(
+    `
+      SELECT COUNT(*)::int AS admin_count
+      FROM app_users
+      WHERE id <> $1
+        AND role = 'admin'
+        AND status = 'active'
+    `,
+    [userId]
+  );
+
+  if (Number(result.rows[0]?.admin_count ?? 0) === 0) {
+    throwInvalidUserPayload("Minst én aktiv administrator må finnes.");
+  }
+}
+
+async function updateUserPassword(clientPool, userId, password) {
+  const normalizedPassword = String(password ?? "");
+  if (normalizedPassword.length < 10) {
+    const error = new Error("Passord må være minst 10 tegn.");
+    error.code = "invalid_user_payload";
+    throw error;
+  }
+
+  const result = await clientPool.query(
+    `
+      UPDATE app_users
+      SET local_enabled = true,
+          password_hash = $2,
+          updated_at = NOW()
+      WHERE id = $1
+      RETURNING id, email, username, display_name, role, status, local_enabled, created_at, updated_at, last_login_at, last_login_provider
+    `,
+    [userId, hashPassword(normalizedPassword)]
+  );
+  return result.rows[0] ? serializeUserAccount(result.rows[0]) : null;
+}
+
+async function markUserLogin(clientPool, userId, provider) {
+  await clientPool.query(
+    `
+      UPDATE app_users
+      SET last_login_at = NOW(), last_login_provider = $2, updated_at = NOW()
+      WHERE id = $1
+    `,
+    [userId, provider]
+  );
+}
+
+function normalizeUserPayload(payload = {}, options = {}) {
+  const email = normalizeUserEmail(payload.email);
+  const username = String(payload.username ?? "").trim();
+  const displayName = String(payload.displayName ?? payload.display_name ?? "").trim();
+  const role = String(payload.role ?? "viewer").trim();
+  const status = String(payload.status ?? "active").trim();
+  const localEnabled = Boolean(payload.localEnabled ?? payload.local_enabled ?? false);
+  const password = String(payload.password ?? "");
+
+  if (!email || !email.includes("@")) {
+    throwInvalidUserPayload("Gyldig e-postadresse er påkrevd.");
+  }
+  if (!displayName) {
+    throwInvalidUserPayload("Navn er påkrevd.");
+  }
+  if (!["admin", "editor", "viewer"].includes(role)) {
+    throwInvalidUserPayload("Ugyldig rolle.");
+  }
+  if (!["active", "disabled"].includes(status)) {
+    throwInvalidUserPayload("Ugyldig status.");
+  }
+  if (options.requirePassword && password.length < 10) {
+    throwInvalidUserPayload("Lokale brukere må ha passord på minst 10 tegn.");
+  }
+
+  return {
+    email,
+    username,
+    displayName,
+    role,
+    status,
+    localEnabled,
+    password
+  };
+}
+
+function throwInvalidUserPayload(message) {
+  const error = new Error(message);
+  error.code = "invalid_user_payload";
+  throw error;
+}
+
+function serializeUserAccount(row) {
+  return {
+    id: row.id,
+    email: row.email,
+    username: row.username ?? "",
+    displayName: row.display_name,
+    role: row.role,
+    status: row.status,
+    localEnabled: Boolean(row.local_enabled),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    lastLoginAt: row.last_login_at,
+    lastLoginProvider: row.last_login_provider
+  };
+}
+
+function userAccountToSessionUser(account, provider, identityUser = {}) {
+  return {
+    provider,
+    id: account.id,
+    name: account.display_name ?? identityUser.name ?? account.email,
+    email: account.email,
+    role: account.role,
+    status: account.status
+  };
+}
+
+function normalizeUserEmail(email) {
+  return String(email ?? "").trim().toLowerCase();
+}
+
 function createAuthSession(res, user) {
   const sessionId = createToken(48);
   const expiresAt = Date.now() + authConfig.sessionMaxAgeMs;
@@ -596,17 +948,48 @@ function createAuthSession(res, user) {
   setAuthSessionCookie(res, sessionId, expiresAt);
 }
 
-function verifyLocalPassword(password) {
-  if (!authConfig.localProvider.enabled || !password) {
+function removeAuthSessionsForUser(userId) {
+  for (const [sessionId, session] of authSessionStore.entries()) {
+    if (session?.user?.id === userId) {
+      authSessionStore.delete(sessionId);
+    }
+  }
+}
+
+function hashInitialLocalPassword(localProvider) {
+  if (localProvider.passwordSha256) {
+    return `sha256$${localProvider.passwordSha256}`;
+  }
+  return hashPassword(localProvider.password);
+}
+
+function hashPassword(password) {
+  const salt = randomBytes(16).toString("base64url");
+  const hash = scryptSync(String(password), salt, 64).toString("base64url");
+  return `scrypt$${salt}$${hash}`;
+}
+
+function verifyUserPassword(password, passwordHash) {
+  if (!password || !passwordHash) {
     return false;
   }
 
-  if (authConfig.localProvider.passwordSha256) {
-    const actualHash = createHash("sha256").update(password).digest("hex");
-    return timingSafeStringEqual(actualHash, authConfig.localProvider.passwordSha256);
+  if (passwordHash.startsWith("scrypt$")) {
+    const [, salt, expectedHash] = passwordHash.split("$");
+    if (!salt || !expectedHash) {
+      return false;
+    }
+    const actualHash = scryptSync(String(password), salt, 64).toString("base64url");
+    return timingSafeStringEqual(actualHash, expectedHash);
   }
 
-  return timingSafeStringEqual(password, authConfig.localProvider.password);
+  if (passwordHash.startsWith("sha256$")) {
+    const expectedHash = passwordHash.slice("sha256$".length);
+    const actualHash = createHash("sha256").update(password).digest("hex");
+    return timingSafeStringEqual(actualHash, expectedHash);
+  }
+
+  return false;
 }
 
 function timingSafeStringEqual(actual, expected) {
@@ -633,6 +1016,24 @@ function requireAuthenticatedRequest(req, res, next) {
   }
 
   res.status(401).json({ error: "authentication_required" });
+}
+
+function requireAdminRequest(req, res, next) {
+  if (!authConfig.required || req.authUser?.role === "admin") {
+    next();
+    return;
+  }
+
+  res.status(403).json({ error: "admin_required" });
+}
+
+function requireEditorRequest(req, res, next) {
+  if (!authConfig.required || ["admin", "editor"].includes(req.authUser?.role)) {
+    next();
+    return;
+  }
+
+  res.status(403).json({ error: "editor_required" });
 }
 
 function readAuthSession(req) {

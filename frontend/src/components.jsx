@@ -1121,6 +1121,7 @@ async function readFileAsBase64(file) {
 
 export function PageRenderer({
   appState,
+  authSession,
   bootstrap,
   closeDialog,
   currentRecord,
@@ -2298,8 +2299,13 @@ function AdminSectionsPage({ appState, bootstrap, currentRecord, currentStructur
   );
 }
 
-function SettingsPage({ appState, currentScreen, onAction, openDialog, showToast, updateDraft }) {
+function SettingsPage({ appState, authSession, currentScreen, onAction, openDialog, showToast, updateDraft }) {
   const [activeSettingsTab, setActiveSettingsTab] = React.useState("catalogs");
+  const [users, setUsers] = React.useState([]);
+  const [isUsersLoading, setIsUsersLoading] = React.useState(false);
+  const [selectedUserId, setSelectedUserId] = React.useState("");
+  const [userForm, setUserForm] = React.useState(createBlankUserForm());
+  const [passwordDraft, setPasswordDraft] = React.useState("");
   const [inlineCatalogAdd, setInlineCatalogAdd] = React.useState({ key: null, value: "", description: "", color: "blue" });
   const inlineCatalogTriggerRefs = React.useRef({});
   const inlineCatalogPanelRef = React.useRef(null);
@@ -2354,6 +2360,221 @@ function SettingsPage({ appState, currentScreen, onAction, openDialog, showToast
     { value: "green", label: "Skoggrønn", color: "#1f7a4c" },
     { value: "berry", label: "Bærtoner", color: "#b146c2" }
   ];
+  const isUserAdmin = authSession?.user?.role === "admin";
+  const selectedUser = users.find((user) => user.id === selectedUserId) ?? null;
+
+  React.useEffect(() => {
+    if (activeSettingsTab !== "users" || !isUserAdmin) {
+      return;
+    }
+    loadUsers();
+  }, [activeSettingsTab, isUserAdmin]);
+
+  React.useEffect(() => {
+    if (!selectedUser) {
+      setUserForm(createBlankUserForm());
+      setPasswordDraft("");
+      return;
+    }
+    setUserForm({
+      displayName: selectedUser.displayName ?? "",
+      email: selectedUser.email ?? "",
+      username: selectedUser.username ?? "",
+      role: selectedUser.role ?? "viewer",
+      status: selectedUser.status ?? "active",
+      localEnabled: Boolean(selectedUser.localEnabled),
+      password: ""
+    });
+    setPasswordDraft("");
+  }, [selectedUser]);
+
+  async function loadUsers() {
+    try {
+      setIsUsersLoading(true);
+      const response = await fetch("/api/users");
+      if (!response.ok) {
+        throw new Error("Klarte ikke å hente brukere.");
+      }
+      const payload = await response.json();
+      setUsers(payload.users ?? []);
+    } catch (error) {
+      showToast(error.message ?? "Klarte ikke å hente brukere.", "error");
+    } finally {
+      setIsUsersLoading(false);
+    }
+  }
+
+  function updateUserForm(field, value) {
+    setUserForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function saveUser() {
+    try {
+      const isEditing = Boolean(selectedUser);
+      const response = await fetch(isEditing ? `/api/users/${selectedUser.id}` : "/api/users", {
+        method: isEditing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userForm)
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.detail ?? "Brukeren kunne ikke lagres.");
+      }
+      const payload = await response.json();
+      await loadUsers();
+      setSelectedUserId(payload.user?.id ?? "");
+      setPasswordDraft("");
+      showToast("Bruker lagret.");
+    } catch (error) {
+      showToast(error.message ?? "Brukeren kunne ikke lagres.", "error");
+    }
+  }
+
+  async function resetUserPassword() {
+    if (!selectedUser) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/users/${selectedUser.id}/password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: passwordDraft })
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.detail ?? "Passordet kunne ikke oppdateres.");
+      }
+      await loadUsers();
+      setPasswordDraft("");
+      showToast("Passord oppdatert.");
+    } catch (error) {
+      showToast(error.message ?? "Passordet kunne ikke oppdateres.", "error");
+    }
+  }
+
+  function startNewUser() {
+    setSelectedUserId("");
+    setUserForm(createBlankUserForm());
+    setPasswordDraft("");
+  }
+
+  function renderUsersTab() {
+    if (!isUserAdmin) {
+      return (
+        <Card className="settingsCard settingsCard--fullWidth" appearance="filled-alternative">
+          <div className="headerStack compact">
+            <Title3>Brukere</Title3>
+            <Body1>Du må være administrator for å administrere brukere.</Body1>
+          </div>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="userAdminGrid">
+        <Card className="settingsCard userAdminList" appearance="filled-alternative">
+          <div className="cardHeader">
+            <div className="headerStack compact">
+              <Title3>Brukere</Title3>
+              <Body1>{isUsersLoading ? "Laster brukere..." : `${users.length} brukere registrert`}</Body1>
+            </div>
+            <Button appearance="secondary" icon={<AddRegular />} onClick={startNewUser}>
+              Ny bruker
+            </Button>
+          </div>
+          <Table size="small" className="userAdminTable">
+            <TableHeader>
+              <TableRow>
+                <TableHeaderCell>Navn</TableHeaderCell>
+                <TableHeaderCell>Rolle</TableHeaderCell>
+                <TableHeaderCell>Status</TableHeaderCell>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow
+                  key={user.id}
+                  className={selectedUserId === user.id ? "isSelected" : ""}
+                  onClick={() => setSelectedUserId(user.id)}
+                >
+                  <TableCell>
+                    <div className="userAdminIdentity">
+                      <Text weight="semibold">{user.displayName}</Text>
+                      <Text size={200}>{user.email}</Text>
+                    </div>
+                  </TableCell>
+                  <TableCell>{roleLabel(user.role)}</TableCell>
+                  <TableCell>
+                    <Badge appearance={user.status === "active" ? "filled" : "outline"}>
+                      {user.status === "active" ? "Aktiv" : "Deaktivert"}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+
+        <Card className="settingsCard userAdminEditor" appearance="filled-alternative">
+          <div className="headerStack compact">
+            <Title3>{selectedUser ? "Rediger bruker" : "Ny bruker"}</Title3>
+            <Body1>Lokale brukere kan logge inn med brukernavn eller e-post. Entra og Google matcher brukeren på e-postadresse.</Body1>
+          </div>
+          <div className="userAdminForm">
+            <Field label="Navn">
+              <Input value={userForm.displayName} onChange={(event) => updateUserForm("displayName", event.target.value)} />
+            </Field>
+            <Field label="E-post">
+              <Input value={userForm.email} onChange={(event) => updateUserForm("email", event.target.value)} />
+            </Field>
+            <Field label="Brukernavn">
+              <Input value={userForm.username} onChange={(event) => updateUserForm("username", event.target.value)} />
+            </Field>
+            <Field label="Rolle">
+              <Dropdown value={roleLabel(userForm.role)} selectedOptions={[userForm.role]} onOptionSelect={(_event, data) => updateUserForm("role", data.optionValue)}>
+                <Option value="admin">Administrator</Option>
+                <Option value="editor">Redaktør</Option>
+                <Option value="viewer">Lesetilgang</Option>
+              </Dropdown>
+            </Field>
+            <Field label="Status">
+              <Dropdown value={userForm.status === "active" ? "Aktiv" : "Deaktivert"} selectedOptions={[userForm.status]} onOptionSelect={(_event, data) => updateUserForm("status", data.optionValue)}>
+                <Option value="active">Aktiv</Option>
+                <Option value="disabled">Deaktivert</Option>
+              </Dropdown>
+            </Field>
+            <Checkbox
+              checked={userForm.localEnabled}
+              label="Tillat lokal innlogging"
+              onChange={(_event, data) => updateUserForm("localEnabled", Boolean(data.checked))}
+            />
+            {!selectedUser && userForm.localEnabled ? (
+              <Field label="Midlertidig passord">
+                <Input type="password" value={userForm.password} onChange={(event) => updateUserForm("password", event.target.value)} />
+              </Field>
+            ) : null}
+            <Button appearance="primary" onClick={saveUser}>
+              Lagre bruker
+            </Button>
+          </div>
+
+          {selectedUser ? (
+            <>
+              <Divider />
+              <div className="userAdminForm">
+                <Field label="Nytt lokalt passord">
+                  <Input type="password" value={passwordDraft} onChange={(event) => setPasswordDraft(event.target.value)} />
+                </Field>
+                <Button appearance="secondary" disabled={!passwordDraft} onClick={resetUserPassword}>
+                  Oppdater passord
+                </Button>
+              </div>
+            </>
+          ) : null}
+        </Card>
+      </div>
+    );
+  }
 
   const closeInlineCatalogAdd = React.useCallback(() => {
     setInlineCatalogAdd({ key: null, value: "", description: "", color: "blue" });
@@ -2613,6 +2834,7 @@ function SettingsPage({ appState, currentScreen, onAction, openDialog, showToast
       <PageHeader screen={currentScreen} onAction={onAction} />
       <TabList selectedValue={activeSettingsTab} onTabSelect={(_event, data) => setActiveSettingsTab(String(data.value))}>
         <Tab value="catalogs">Registere</Tab>
+        <Tab value="users">Brukere</Tab>
         <Tab value="themes">Tema og farger</Tab>
       </TabList>
 
@@ -2690,6 +2912,8 @@ function SettingsPage({ appState, currentScreen, onAction, openDialog, showToast
               )
             : null}
         </>
+      ) : activeSettingsTab === "users" ? (
+        renderUsersTab()
       ) : (
         <Card className="settingsCard settingsCard--fullWidth" appearance="filled-alternative">
           <div className="headerStack compact">
@@ -2763,6 +2987,26 @@ function SettingsPage({ appState, currentScreen, onAction, openDialog, showToast
       )}
     </div>
   );
+}
+
+function createBlankUserForm() {
+  return {
+    displayName: "",
+    email: "",
+    username: "",
+    role: "viewer",
+    status: "active",
+    localEnabled: true,
+    password: ""
+  };
+}
+
+function roleLabel(role) {
+  return {
+    admin: "Administrator",
+    editor: "Redaktør",
+    viewer: "Lesetilgang"
+  }[role] ?? "Lesetilgang";
 }
 
 function OrganizationStructurePage({ appState, currentScreen, onAction, openDialog, selectedOrgNode, selectedOrgNodeId, setSelectedOrgNodeId, showToast, updateDraft }) {

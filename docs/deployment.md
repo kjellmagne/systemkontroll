@@ -157,13 +157,15 @@ AUTH_ALLOWED_EMAIL_DOMAINS=example.no,example.com
 AUTH_ALLOWED_EMAILS=ola.nordmann@example.no,kari.nordmann@example.no
 ```
 
-If both allow-list settings are empty, any account accepted by a configured login method can sign in.
+If both allow-list settings are empty, external identity providers are not restricted by domain. The user must still exist as an active SystemKontroll user.
 
 Sessions are held in the app process and signed with `AUTH_SESSION_SECRET`. Restarting or recreating the app container logs users out, but does not affect saved application data.
 
 ### Built-in SystemKontroll login
 
 Use this login method when Entra ID or Google is not configured yet, or keep it as an emergency/admin fallback.
+
+The `.env` values below bootstrap the first administrator when the `app_users` table is empty. After the first admin user exists, manage users in the web app under **Innstillinger → Brukere**. Local passwords created in the web app are stored as hashes in Postgres.
 
 ```bash
 AUTH_LOCAL_ENABLED=true
@@ -197,6 +199,27 @@ Disable the built-in login only when another provider is ready:
 ```bash
 AUTH_LOCAL_ENABLED=false
 ```
+
+### User administration
+
+Administrators manage users inside SystemKontroll under **Innstillinger → Brukere**.
+
+Roles:
+
+- `Administrator`: can manage users and edit data.
+- `Redaktør`: can edit SystemKontroll data, but cannot manage users.
+- `Lesetilgang`: can read data, but cannot save changes.
+
+Local login:
+
+- Enable **Tillat lokal innlogging** for users who should log in with SystemKontroll username/password.
+- Set or reset their local password from the same user screen.
+
+Microsoft Entra ID and Google login:
+
+- Create the user in SystemKontroll with the same e-mail address as the Entra/Google account.
+- The external identity provider performs authentication.
+- SystemKontroll assigns role and access based on the matching active user row.
 
 ### Microsoft Entra ID / Azure AD
 

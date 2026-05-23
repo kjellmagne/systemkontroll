@@ -84,9 +84,14 @@ export default function App() {
   const { dispatchToast } = useToastController(toasterId);
   const currentUser = useMemo(() => {
     const authenticatedUser = authSession?.user;
+    const roleLabel = {
+      admin: "Administrator",
+      editor: "Redaktør",
+      viewer: "Lesetilgang"
+    }[authenticatedUser?.role];
     return {
       name: authenticatedUser?.name || authenticatedUser?.email || "Ola Nordmann",
-      role: authenticatedUser?.email || "Organisasjonsadministrator"
+      role: roleLabel ? `${roleLabel} · ${authenticatedUser?.email ?? ""}` : authenticatedUser?.email || "Organisasjonsadministrator"
     };
   }, [authSession]);
 
@@ -1057,6 +1062,7 @@ export default function App() {
             <div className="mainInner">
               <PageRenderer
                 appState={appState}
+                authSession={authSession}
                 bootstrap={bootstrap}
                 closeDialog={closeDialog}
                 currentRecord={currentRecord}

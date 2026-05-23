@@ -622,6 +622,44 @@ body:has(.shell[data-appearance="dark"]) {
   width: 100%;
 }
 
+.userAdminGrid {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.userAdminList,
+.userAdminEditor {
+  min-width: 0;
+}
+
+.userAdminTable {
+  width: 100%;
+}
+
+.userAdminTable tr {
+  cursor: pointer;
+}
+
+.userAdminTable tr.isSelected {
+  background: var(--accent-bg-subtle);
+}
+
+.userAdminIdentity,
+.userAdminForm {
+  display: flex;
+  flex-direction: column;
+}
+
+.userAdminIdentity {
+  gap: 2px;
+}
+
+.userAdminForm {
+  gap: 14px;
+}
+
 .settingsLabelChipEditor {
   align-content: flex-start;
   min-height: 72px;
@@ -2693,6 +2731,7 @@ body:has(.shell[data-appearance="dark"]) {
 
   .orgWorkspace,
   .orgGrid,
+  .userAdminGrid,
   .sectionGrid {
     grid-template-columns: 1fr;
   }
