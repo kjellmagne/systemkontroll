@@ -63,6 +63,391 @@ const bottomNavIcons = {
   logout: SignOutRegular
 };
 
+function exportGrunnprinsipperEvaluationPdf(appState, exportedBy = "SystemKontroll") {
+  const record = appState?.records?.grunnprinsipper_ikt_sikkerhet;
+  if (!record) {
+    return false;
+  }
+
+  const reportWindow = window.open("", "_blank", "width=1200,height=900");
+  if (!reportWindow) {
+    return false;
+  }
+
+  const reportHtml = buildGrunnprinsipperReportHtml(record, exportedBy);
+  reportWindow.document.open();
+  reportWindow.document.write(reportHtml);
+  reportWindow.document.close();
+  reportWindow.focus();
+  reportWindow.setTimeout(() => {
+    reportWindow.print();
+  }, 500);
+  return true;
+}
+
+function buildGrunnprinsipperReportHtml(record, exportedBy) {
+  const fieldValues = record.fieldValues ?? {};
+  const collectionEntries = Object.entries(record.collectionValues ?? {})
+    .filter(([key, rows]) => /^gp_\d+_\d+$/.test(key) && Array.isArray(rows))
+    .sort(([leftKey], [rightKey]) => compareGrunnprinsippKeys(leftKey, rightKey));
+  const allRows = collectionEntries.flatMap(([, rows]) => rows);
+  const statusCounts = countByValue(allRows, "Status", "Ikke vurdert");
+  const priorityCounts = countByValue(allRows, "Prioritet", "Ikke satt");
+  const evaluatedCount = allRows.filter((row) => String(row?.Status ?? "").trim() && String(row.Status).trim() !== "Ikke vurdert").length;
+  const generatedAt = new Date();
+  const generatedAtLabel = new Intl.DateTimeFormat("nb-NO", {
+    dateStyle: "long",
+    timeStyle: "short"
+  }).format(generatedAt);
+
+  return `<!doctype html>
+<html lang="nb">
+  <head>
+    <meta charset="utf-8">
+    <title>Grunnprinsipper for IKT-sikkerhet - PDF-rapport</title>
+    <style>
+      ${buildGrunnprinsipperReportCss()}
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="cover">
+        <p class="eyebrow">SystemKontroll</p>
+        <h1>Grunnprinsipper for IKT-sikkerhet</h1>
+        <p class="lead">${escapeReportHtml(fieldValues.framework_summary || record.description || "")}</p>
+        <dl class="metaGrid">
+          <div><dt>Eksportert</dt><dd>${escapeReportHtml(generatedAtLabel)}</dd></div>
+          <div><dt>Eksportert av</dt><dd>${escapeReportHtml(exportedBy)}</dd></div>
+          <div><dt>Sist oppdatert</dt><dd>${escapeReportHtml(record.meta?.lastUpdated ?? "Ikke satt")}</dd></div>
+          <div><dt>Antall tiltak</dt><dd>${allRows.length}</dd></div>
+        </dl>
+      </section>
+
+      <section class="summarySection">
+        <h2>Oppsummering</h2>
+        <div class="summaryGrid">
+          <div class="summaryCard"><span>Vurdert</span><strong>${evaluatedCount}</strong></div>
+          <div class="summaryCard"><span>Ikke vurdert</span><strong>${allRows.length - evaluatedCount}</strong></div>
+          <div class="summaryCard"><span>Grunnprinsipper</span><strong>${collectionEntries.length}</strong></div>
+          <div class="summaryCard"><span>Kommentarer</span><strong>${allRows.filter((row) => String(row?.Kommentar ?? "").trim()).length}</strong></div>
+        </div>
+        ${renderReportBreakdown("Status", statusCounts)}
+        ${renderReportBreakdown("Prioritet", priorityCounts)}
+      </section>
+
+      <section class="overviewSection">
+        <h2>Rammeverk og bruk</h2>
+        ${renderReportParagraph("Kategorier og fanestruktur", fieldValues.category_structure)}
+        ${renderReportParagraph("Prioritering", fieldValues.priority_groups)}
+        ${renderReportParagraph("ISO 27002-kobling", fieldValues.iso_mapping)}
+        ${renderReportParagraph("Anbefalt bruk", fieldValues.recommended_usage)}
+      </section>
+
+      <section class="evaluationSection">
+        <h2>Full evaluering</h2>
+        ${collectionEntries.map(([collectionKey, rows]) => renderGrunnprinsipperCollectionReport(collectionKey, rows)).join("")}
+      </section>
+    </main>
+  </body>
+</html>`;
+}
+
+function buildGrunnprinsipperReportCss() {
+  return `
+    @page { size: A4; margin: 16mm 14mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #1f2933;
+      background: #ffffff;
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.45;
+    }
+    main { max-width: 100%; }
+    h1, h2, h3, h4 { margin: 0; color: #111827; line-height: 1.18; }
+    h1 { font-size: 30pt; letter-spacing: 0; }
+    h2 { margin: 0 0 12px; font-size: 18pt; }
+    h3 { font-size: 14pt; }
+    h4 { font-size: 11pt; }
+    p { margin: 0; }
+    a { color: #0f6cbd; }
+    .cover {
+      min-height: 210mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+      page-break-after: always;
+    }
+    .eyebrow {
+      color: #0f6cbd;
+      font-size: 10pt;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .lead { max-width: 170mm; font-size: 13pt; color: #374151; }
+    .metaGrid, .summaryGrid, .breakdownGrid {
+      display: grid;
+      gap: 10px;
+    }
+    .metaGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 18px;
+    }
+    .metaGrid div, .summaryCard, .breakdownItem {
+      border: 1px solid #d7dde8;
+      border-radius: 6px;
+      padding: 10px 12px;
+      background: #f8fafc;
+    }
+    dt, .summaryCard span, .breakdownItem span {
+      display: block;
+      color: #5b6472;
+      font-size: 8.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    dd, .summaryCard strong, .breakdownItem strong {
+      margin: 4px 0 0;
+      color: #111827;
+      font-size: 14pt;
+      font-weight: 700;
+    }
+    section { margin-bottom: 18px; }
+    .summarySection, .overviewSection { page-break-after: always; }
+    .summaryGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 14px; }
+    .breakdownBlock { margin-top: 12px; }
+    .breakdownGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .overviewBlock {
+      margin-bottom: 12px;
+      padding: 12px;
+      border-left: 4px solid #0f6cbd;
+      background: #f8fafc;
+    }
+    .overviewBlock h3 { margin-bottom: 6px; font-size: 12pt; }
+    .principleGroup {
+      page-break-before: auto;
+      margin-bottom: 18px;
+    }
+    .principleHeader {
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #d7dde8;
+    }
+    .principleHeader p { margin-top: 4px; color: #4b5563; }
+    .measureCard {
+      page-break-inside: avoid;
+      margin: 0 0 10px;
+      border: 1px solid #d7dde8;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .measureHeader {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border-bottom: 1px solid #d7dde8;
+    }
+    .measureHeader h4 { margin-bottom: 4px; }
+    .measureId { white-space: nowrap; color: #0f6cbd; font-weight: 700; }
+    .measureBody { padding: 10px 12px; }
+    .measureText { margin-bottom: 10px; color: #374151; white-space: pre-wrap; }
+    .measureFacts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .fact {
+      padding: 7px 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 5px;
+    }
+    .fact span {
+      display: block;
+      color: #6b7280;
+      font-size: 8pt;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .fact strong {
+      display: block;
+      margin-top: 2px;
+      font-size: 10pt;
+    }
+    .commentBlock {
+      margin-top: 8px;
+      padding: 9px 10px;
+      border: 1px solid #d7dde8;
+      border-radius: 5px;
+      background: #ffffff;
+    }
+    .commentBlock h5 {
+      margin: 0 0 6px;
+      color: #374151;
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .commentContent p { margin: 0 0 6px; }
+    .commentContent ul, .commentContent ol { margin: 5px 0 7px 20px; padding: 0; }
+    @media print {
+      .principleGroup { break-inside: auto; }
+      .measureCard { break-inside: avoid; }
+    }
+  `;
+}
+
+function renderReportParagraph(title, value) {
+  const normalizedValue = String(value ?? "").trim();
+  if (!normalizedValue) {
+    return "";
+  }
+  return `<div class="overviewBlock"><h3>${escapeReportHtml(title)}</h3><p>${escapeReportHtml(normalizedValue)}</p></div>`;
+}
+
+function renderReportBreakdown(title, counts) {
+  const entries = Object.entries(counts);
+  if (!entries.length) {
+    return "";
+  }
+  return `<div class="breakdownBlock">
+    <h3>${escapeReportHtml(title)}</h3>
+    <div class="breakdownGrid">
+      ${entries.map(([label, count]) => `<div class="breakdownItem"><span>${escapeReportHtml(label)}</span><strong>${count}</strong></div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function renderGrunnprinsipperCollectionReport(collectionKey, rows) {
+  const firstRow = rows[0] ?? {};
+  const title = [firstRow["GP-ID"], firstRow.Grunnprinsipp].filter(Boolean).join(" ");
+  const subtitle = [firstRow.Kategori, firstRow.Spesifisering].filter(Boolean).join(" / ");
+
+  return `<article class="principleGroup" id="${escapeReportAttribute(collectionKey)}">
+    <div class="principleHeader">
+      <h3>${escapeReportHtml(title || collectionKey)}</h3>
+      ${subtitle ? `<p>${escapeReportHtml(subtitle)}</p>` : ""}
+    </div>
+    ${rows.map(renderGrunnprinsipperMeasureReport).join("")}
+  </article>`;
+}
+
+function renderGrunnprinsipperMeasureReport(row) {
+  const comment = sanitizeReportRichText(row?.Kommentar);
+  return `<div class="measureCard">
+    <div class="measureHeader">
+      <div>
+        <h4>${escapeReportHtml(row?.Tiltaksoverskrift || "Uten tiltak")}</h4>
+        <p>${escapeReportHtml(row?.["Tiltak ID"] || row?.["Nr."] || "")}</p>
+      </div>
+      <div class="measureId">${escapeReportHtml(row?.["Tiltak ID"] || "")}</div>
+    </div>
+    <div class="measureBody">
+      <p class="measureText">${escapeReportHtml(row?.Tiltaksbeskrivelse || "")}</p>
+      <div class="measureFacts">
+        <div class="fact"><span>Status</span><strong>${escapeReportHtml(row?.Status || "Ikke vurdert")}</strong></div>
+        <div class="fact"><span>Prioritet</span><strong>${escapeReportHtml(row?.Prioritet || "Ikke satt")}</strong></div>
+        <div class="fact"><span>ISO 27002</span><strong>${escapeReportHtml(row?.["ISO 27002"] || "Ikke satt")}</strong></div>
+      </div>
+      <div class="commentBlock">
+        <h5>Kommentar og oppfølging</h5>
+        <div class="commentContent">${comment || "<p>Ingen kommentar registrert.</p>"}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function compareGrunnprinsippKeys(leftKey, rightKey) {
+  const leftParts = String(leftKey).match(/\d+/g)?.map(Number) ?? [];
+  const rightParts = String(rightKey).match(/\d+/g)?.map(Number) ?? [];
+  for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
+    const difference = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
+    if (difference) {
+      return difference;
+    }
+  }
+  return String(leftKey).localeCompare(String(rightKey), "nb");
+}
+
+function countByValue(rows, key, fallback) {
+  return rows.reduce((counts, row) => {
+    const label = String(row?.[key] ?? "").trim() || fallback;
+    counts[label] = (counts[label] ?? 0) + 1;
+    return counts;
+  }, {});
+}
+
+function sanitizeReportRichText(value) {
+  const rawValue = String(value ?? "").trim();
+  if (!rawValue) {
+    return "";
+  }
+
+  if (!/<\/?[a-z][\s\S]*>/i.test(rawValue)) {
+    return `<p>${escapeReportHtml(rawValue).replace(/\n/g, "<br>")}</p>`;
+  }
+
+  const template = document.createElement("template");
+  template.innerHTML = rawValue;
+  return Array.from(template.content.childNodes).map(sanitizeReportNode).join("").trim();
+}
+
+function sanitizeReportNode(node) {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return escapeReportHtml(node.textContent ?? "");
+  }
+
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    return "";
+  }
+
+  const tagName = node.tagName.toLowerCase();
+  const children = Array.from(node.childNodes).map(sanitizeReportNode).join("");
+
+  if (["strong", "b"].includes(tagName)) {
+    return `<strong>${children}</strong>`;
+  }
+  if (["em", "i"].includes(tagName)) {
+    return `<em>${children}</em>`;
+  }
+  if (tagName === "u") {
+    return `<u>${children}</u>`;
+  }
+  if (tagName === "br") {
+    return "<br>";
+  }
+  if (["p", "li", "ul", "ol"].includes(tagName)) {
+    return `<${tagName}>${children}</${tagName}>`;
+  }
+  if (tagName === "a") {
+    const href = normalizeReportHref(node.getAttribute("href"));
+    return href ? `<a href="${escapeReportAttribute(href)}">${children || escapeReportHtml(href)}</a>` : children;
+  }
+  return children;
+}
+
+function normalizeReportHref(value) {
+  const trimmed = String(value ?? "").trim();
+  return /^(https?:|mailto:)/i.test(trimmed) ? trimmed : "";
+}
+
+function escapeReportHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function escapeReportAttribute(value) {
+  return escapeReportHtml(value).replace(/"/g, "&quot;");
+}
+
 export default function App() {
   const [authSession, setAuthSession] = useState(null);
   const [bootstrap, setBootstrap] = useState(null);
@@ -574,6 +959,17 @@ export default function App() {
 
   async function handlePageAction(action) {
     if (!action) {
+      return;
+    }
+
+    if (action.actionId === "export-grunnprinsipper-pdf") {
+      const didOpenReport = exportGrunnprinsipperEvaluationPdf(appState, currentUser.name);
+      showToast(
+        didOpenReport
+          ? "PDF-rapporten åpnes i utskriftsvisning."
+          : "Kunne ikke åpne PDF-rapporten. Sjekk at popup-vinduer er tillatt.",
+        didOpenReport ? "info" : "error"
+      );
       return;
     }
 

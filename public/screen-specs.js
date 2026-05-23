@@ -896,7 +896,10 @@ export const screenRegistry = [
     title: "Grunnprinsipper for IKT-sikkerhet",
     description: "NSMs grunnprinsipper for IKT-sikkerhet med oversikt, grunnprinsipper og lokal oppfølging av tiltak.",
     tabSource: "model",
-    actions: [{ label: "Lagre endringer", icon: "save", tone: "primary" }],
+    actions: [
+      { label: "Eksporter PDF", icon: "print", tone: "ghost", actionId: "export-grunnprinsipper-pdf" },
+      { label: "Lagre endringer", icon: "save", tone: "primary" }
+    ],
     sectionLayouts: {
       overview: { span: 12, icon: "shield", tone: "accent" },
       gp_1_1: { span: 12, icon: "clipboard" },
