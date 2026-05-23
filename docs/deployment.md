@@ -221,6 +221,38 @@ Microsoft Entra ID and Google login:
 - The external identity provider performs authentication.
 - SystemKontroll assigns role and access based on the matching active user row.
 
+### API keys and OpenAPI
+
+Administrators manage API keys inside SystemKontroll under **Innstillinger → API-nøkler**.
+
+- API keys are shown only once when created.
+- Store the generated key in a password manager or secret store.
+- Revoke old keys from the same screen.
+- API keys have the same roles as users: `Administrator`, `Redaktør`, and `Lesetilgang`.
+
+Use API keys with either header:
+
+```bash
+Authorization: Bearer <systemkontroll-api-key>
+```
+
+or:
+
+```bash
+X-API-Key: <systemkontroll-api-key>
+```
+
+OpenAPI and Swagger documentation:
+
+- OpenAPI JSON: `http://192.168.222.171:3100/openapi.json`
+- Swagger UI: `http://192.168.222.171:3100/api/docs`
+
+Primary API groups:
+
+- `/api/users` for user administration. Requires `Administrator`.
+- `/api/api-keys` for API key administration. Requires `Administrator`.
+- `/api/data/...` for SystemKontroll data. `Lesetilgang` can read, `Redaktør` and `Administrator` can write.
+
 ### Microsoft Entra ID / Azure AD
 
 In Microsoft Entra admin center:

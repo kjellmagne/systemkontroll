@@ -219,6 +219,14 @@ app.post("/api/auth/logout", (req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/openapi.json", (_req, res) => {
+  res.json(buildOpenApiSpec());
+});
+
+app.get("/api/docs", (_req, res) => {
+  res.type("html").send(renderSwaggerUiPage());
+});
+
 app.use("/api", requireAuthenticatedRequest);
 app.use("/generated", requireAuthenticatedRequest);
 
@@ -238,6 +246,239 @@ app.get("/api/bootstrap", (_req, res) => {
     sidebarNavigation,
     topBarLinks
   });
+});
+
+app.get("/api/data/state", async (_req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    res.json(state);
+  } catch (error) {
+    res.status(500).json({ error: "data_state_read_failed", detail: error.message });
+  }
+});
+
+app.put("/api/data/state", requireEditorRequest, async (req, res) => {
+  try {
+    const savedState = await writePersistedState(pool, req.body);
+    res.json(savedState);
+  } catch (error) {
+    res.status(500).json({ error: "data_state_write_failed", detail: error.message });
+  }
+});
+
+app.get("/api/data/entities", async (_req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    res.json({
+      entities: Object.fromEntries(
+        Object.entries(state.entities ?? {}).map(([entityKey, records]) => [
+          entityKey,
+          {
+            count: Array.isArray(records) ? records.length : 0,
+            records: Array.isArray(records) ? records : []
+          }
+        ])
+      )
+    });
+  } catch (error) {
+    res.status(500).json({ error: "data_entities_read_failed", detail: error.message });
+  }
+});
+
+app.get("/api/data/entities/:entityKey", async (req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    const records = getEntityCollection(state, req.params.entityKey);
+    if (!records) {
+      res.status(404).json({ error: "entity_not_found" });
+      return;
+    }
+    res.json({ entityKey: req.params.entityKey, records });
+  } catch (error) {
+    res.status(500).json({ error: "data_entity_read_failed", detail: error.message });
+  }
+});
+
+app.post("/api/data/entities/:entityKey", requireEditorRequest, async (req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    const entityKey = req.params.entityKey;
+    const records = getEntityCollection(state, entityKey);
+    if (!records) {
+      res.status(404).json({ error: "entity_not_found" });
+      return;
+    }
+    const record = normalizeDataRecordPayload(req.body, entityKey);
+    record.id = record.id || createDataRecordId(entityKey, records);
+    if (records.some((candidate) => candidate.id === record.id)) {
+      res.status(409).json({ error: "record_exists" });
+      return;
+    }
+    records.push(record);
+    const savedState = await writePersistedState(pool, state);
+    const savedRecord = findDataRecord(savedState.entities?.[entityKey] ?? [], record.id);
+    res.status(201).json({ record: savedRecord });
+  } catch (error) {
+    const statusCode = error?.code === "invalid_data_payload" ? 400 : 500;
+    res.status(statusCode).json({ error: "data_entity_create_failed", detail: error.message });
+  }
+});
+
+app.get("/api/data/entities/:entityKey/:recordId", async (req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    const records = getEntityCollection(state, req.params.entityKey);
+    const record = records ? findDataRecord(records, req.params.recordId) : null;
+    if (!record) {
+      res.status(404).json({ error: "record_not_found" });
+      return;
+    }
+    res.json({ record });
+  } catch (error) {
+    res.status(500).json({ error: "data_record_read_failed", detail: error.message });
+  }
+});
+
+app.put("/api/data/entities/:entityKey/:recordId", requireEditorRequest, async (req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    const records = getEntityCollection(state, req.params.entityKey);
+    if (!records) {
+      res.status(404).json({ error: "entity_not_found" });
+      return;
+    }
+    const recordIndex = records.findIndex((record) => record.id === req.params.recordId);
+    if (recordIndex === -1) {
+      res.status(404).json({ error: "record_not_found" });
+      return;
+    }
+    const record = normalizeDataRecordPayload(req.body, req.params.entityKey);
+    records[recordIndex] = { ...record, id: req.params.recordId, entityKey: req.params.entityKey };
+    const savedState = await writePersistedState(pool, state);
+    res.json({ record: findDataRecord(savedState.entities?.[req.params.entityKey] ?? [], req.params.recordId) });
+  } catch (error) {
+    const statusCode = error?.code === "invalid_data_payload" ? 400 : 500;
+    res.status(statusCode).json({ error: "data_record_update_failed", detail: error.message });
+  }
+});
+
+app.patch("/api/data/entities/:entityKey/:recordId", requireEditorRequest, async (req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    const records = getEntityCollection(state, req.params.entityKey);
+    if (!records) {
+      res.status(404).json({ error: "entity_not_found" });
+      return;
+    }
+    const recordIndex = records.findIndex((record) => record.id === req.params.recordId);
+    if (recordIndex === -1) {
+      res.status(404).json({ error: "record_not_found" });
+      return;
+    }
+    const patch = normalizeDataRecordPayload(req.body, req.params.entityKey, { allowPartial: true });
+    records[recordIndex] = mergeDataRecord(records[recordIndex], patch, req.params.entityKey, req.params.recordId);
+    const savedState = await writePersistedState(pool, state);
+    res.json({ record: findDataRecord(savedState.entities?.[req.params.entityKey] ?? [], req.params.recordId) });
+  } catch (error) {
+    const statusCode = error?.code === "invalid_data_payload" ? 400 : 500;
+    res.status(statusCode).json({ error: "data_record_patch_failed", detail: error.message });
+  }
+});
+
+app.delete("/api/data/entities/:entityKey/:recordId", requireEditorRequest, async (req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    const records = getEntityCollection(state, req.params.entityKey);
+    if (!records) {
+      res.status(404).json({ error: "entity_not_found" });
+      return;
+    }
+    const recordIndex = records.findIndex((record) => record.id === req.params.recordId);
+    if (recordIndex === -1) {
+      res.status(404).json({ error: "record_not_found" });
+      return;
+    }
+    const [deletedRecord] = records.splice(recordIndex, 1);
+    await writePersistedState(pool, state);
+    res.json({ deleted: true, record: deletedRecord });
+  } catch (error) {
+    res.status(500).json({ error: "data_record_delete_failed", detail: error.message });
+  }
+});
+
+app.get("/api/data/records/:recordKey", async (req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    const record = state.records?.[req.params.recordKey];
+    if (!record) {
+      res.status(404).json({ error: "record_not_found" });
+      return;
+    }
+    res.json({ record });
+  } catch (error) {
+    res.status(500).json({ error: "data_singleton_read_failed", detail: error.message });
+  }
+});
+
+app.put("/api/data/records/:recordKey", requireEditorRequest, async (req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    if (!Object.hasOwn(state.records ?? {}, req.params.recordKey)) {
+      res.status(404).json({ error: "record_not_found" });
+      return;
+    }
+    state.records[req.params.recordKey] = normalizeDataRecordPayload(req.body, state.records[req.params.recordKey]?.entityKey ?? req.params.recordKey);
+    const savedState = await writePersistedState(pool, state);
+    res.json({ record: savedState.records?.[req.params.recordKey] });
+  } catch (error) {
+    const statusCode = error?.code === "invalid_data_payload" ? 400 : 500;
+    res.status(statusCode).json({ error: "data_singleton_write_failed", detail: error.message });
+  }
+});
+
+app.get("/api/data/settings", async (_req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    res.json({ settings: state.settings ?? {} });
+  } catch (error) {
+    res.status(500).json({ error: "data_settings_read_failed", detail: error.message });
+  }
+});
+
+app.put("/api/data/settings", requireEditorRequest, async (req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    state.settings = isPlainDataObject(req.body?.settings) ? req.body.settings : req.body;
+    const savedState = await writePersistedState(pool, state);
+    res.json({ settings: savedState.settings ?? {} });
+  } catch (error) {
+    res.status(500).json({ error: "data_settings_write_failed", detail: error.message });
+  }
+});
+
+app.get("/api/data/organization-structure", async (_req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    res.json({ organizationStructure: state.organizationStructure ?? [] });
+  } catch (error) {
+    res.status(500).json({ error: "data_organization_read_failed", detail: error.message });
+  }
+});
+
+app.put("/api/data/organization-structure", requireEditorRequest, async (req, res) => {
+  try {
+    const state = await readPersistedState(pool);
+    const organizationStructure = Array.isArray(req.body?.organizationStructure) ? req.body.organizationStructure : req.body;
+    if (!Array.isArray(organizationStructure)) {
+      throwInvalidDataPayload("organizationStructure must be an array.");
+    }
+    state.organizationStructure = organizationStructure;
+    const savedState = await writePersistedState(pool, state);
+    res.json({ organizationStructure: savedState.organizationStructure ?? [] });
+  } catch (error) {
+    const statusCode = error?.code === "invalid_data_payload" ? 400 : 500;
+    res.status(statusCode).json({ error: "data_organization_write_failed", detail: error.message });
+  }
 });
 
 app.get("/api/users", requireAdminRequest, async (_req, res) => {
@@ -286,6 +527,51 @@ app.post("/api/users/:userId/password", requireAdminRequest, async (req, res) =>
   } catch (error) {
     const statusCode = error?.code === "invalid_user_payload" ? 400 : 500;
     res.status(statusCode).json({ error: "password_update_failed", detail: error.message });
+  }
+});
+
+app.get("/api/api-keys", requireAdminRequest, async (_req, res) => {
+  try {
+    const apiKeys = await listApiKeys(pool);
+    res.json({ apiKeys });
+  } catch (error) {
+    res.status(500).json({ error: "api_keys_read_failed", detail: error.message });
+  }
+});
+
+app.post("/api/api-keys", requireAdminRequest, async (req, res) => {
+  try {
+    const created = await createApiKey(pool, req.body, req.authUser);
+    res.status(201).json(created);
+  } catch (error) {
+    const statusCode = error?.code === "invalid_api_key_payload" ? 400 : 500;
+    res.status(statusCode).json({ error: "api_key_create_failed", detail: error.message });
+  }
+});
+
+app.post("/api/api-keys/:keyId/revoke", requireAdminRequest, async (req, res) => {
+  try {
+    const apiKey = await revokeApiKey(pool, req.params.keyId);
+    if (!apiKey) {
+      res.status(404).json({ error: "api_key_not_found" });
+      return;
+    }
+    res.json({ apiKey });
+  } catch (error) {
+    res.status(500).json({ error: "api_key_revoke_failed", detail: error.message });
+  }
+});
+
+app.delete("/api/api-keys/:keyId", requireAdminRequest, async (req, res) => {
+  try {
+    const apiKey = await revokeApiKey(pool, req.params.keyId);
+    if (!apiKey) {
+      res.status(404).json({ error: "api_key_not_found" });
+      return;
+    }
+    res.json({ apiKey });
+  } catch (error) {
+    res.status(500).json({ error: "api_key_revoke_failed", detail: error.message });
   }
 });
 
@@ -404,6 +690,21 @@ async function ensureDatabaseSchema(clientPool) {
     CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_unique_idx
     ON app_users (LOWER(username))
     WHERE username IS NOT NULL AND username <> ''
+  `);
+
+  await clientPool.query(`
+    CREATE TABLE IF NOT EXISTS app_api_keys (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      key_prefix TEXT NOT NULL,
+      key_hash TEXT NOT NULL UNIQUE,
+      role TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('admin', 'editor', 'viewer')),
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'revoked')),
+      created_by TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_used_at TIMESTAMPTZ,
+      revoked_at TIMESTAMPTZ
+    )
   `);
 }
 
@@ -941,6 +1242,192 @@ function normalizeUserEmail(email) {
   return String(email ?? "").trim().toLowerCase();
 }
 
+async function listApiKeys(clientPool) {
+  const result = await clientPool.query(`
+    SELECT id, name, key_prefix, role, status, created_by, created_at, last_used_at, revoked_at
+    FROM app_api_keys
+    ORDER BY created_at DESC
+  `);
+  return result.rows.map(serializeApiKey);
+}
+
+async function createApiKey(clientPool, payload, authUser) {
+  const name = String(payload?.name ?? "").trim();
+  const role = String(payload?.role ?? "viewer").trim();
+  if (!name) {
+    throwInvalidApiKeyPayload("Navn er påkrevd.");
+  }
+  if (!["admin", "editor", "viewer"].includes(role)) {
+    throwInvalidApiKeyPayload("Ugyldig rolle.");
+  }
+
+  const token = `sk_${createToken(32)}`;
+  const keyPrefix = `${token.slice(0, 10)}...`;
+  const result = await clientPool.query(
+    `
+      INSERT INTO app_api_keys (id, name, key_prefix, key_hash, role, status, created_by, created_at)
+      VALUES ($1, $2, $3, $4, $5, 'active', $6, NOW())
+      RETURNING id, name, key_prefix, role, status, created_by, created_at, last_used_at, revoked_at
+    `,
+    [randomUUID(), name, keyPrefix, hashApiKey(token), role, authUser?.email ?? authUser?.name ?? null]
+  );
+  return { apiKey: serializeApiKey(result.rows[0]), token };
+}
+
+async function revokeApiKey(clientPool, keyId) {
+  const result = await clientPool.query(
+    `
+      UPDATE app_api_keys
+      SET status = 'revoked', revoked_at = COALESCE(revoked_at, NOW())
+      WHERE id = $1
+      RETURNING id, name, key_prefix, role, status, created_by, created_at, last_used_at, revoked_at
+    `,
+    [keyId]
+  );
+  return result.rows[0] ? serializeApiKey(result.rows[0]) : null;
+}
+
+async function readApiKeySession(req) {
+  const token = readApiKeyToken(req);
+  if (!token) {
+    return null;
+  }
+
+  const result = await pool.query(
+    `
+      UPDATE app_api_keys
+      SET last_used_at = NOW()
+      WHERE key_hash = $1
+        AND status = 'active'
+        AND revoked_at IS NULL
+      RETURNING id, name, key_prefix, role, status, created_by, created_at, last_used_at, revoked_at
+    `,
+    [hashApiKey(token)]
+  );
+  const apiKey = result.rows[0];
+  if (!apiKey) {
+    return null;
+  }
+
+  return {
+    user: {
+      provider: "api_key",
+      id: `api_key:${apiKey.id}`,
+      name: apiKey.name,
+      email: "",
+      role: apiKey.role,
+      status: "active"
+    },
+    apiKey: serializeApiKey(apiKey),
+    createdAt: Date.now(),
+    expiresAt: Date.now() + authConfig.sessionMaxAgeMs
+  };
+}
+
+function readApiKeyToken(req) {
+  const authorization = String(req.headers.authorization ?? "").trim();
+  if (authorization.toLowerCase().startsWith("bearer ")) {
+    return authorization.slice(7).trim();
+  }
+  return String(req.headers["x-api-key"] ?? "").trim();
+}
+
+function serializeApiKey(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    keyPrefix: row.key_prefix,
+    role: row.role,
+    status: row.status,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    lastUsedAt: row.last_used_at,
+    revokedAt: row.revoked_at
+  };
+}
+
+function hashApiKey(token) {
+  return createHash("sha256").update(String(token)).digest("hex");
+}
+
+function throwInvalidApiKeyPayload(message) {
+  const error = new Error(message);
+  error.code = "invalid_api_key_payload";
+  throw error;
+}
+
+function getEntityCollection(state, entityKey) {
+  const records = state.entities?.[entityKey];
+  return Array.isArray(records) ? records : null;
+}
+
+function findDataRecord(records, recordId) {
+  return records.find((record) => String(record?.id ?? "") === String(recordId)) ?? null;
+}
+
+function normalizeDataRecordPayload(payload, entityKey, options = {}) {
+  const record = isPlainDataObject(payload?.record) ? payload.record : payload;
+  if (!isPlainDataObject(record)) {
+    throwInvalidDataPayload("Record payload must be an object.");
+  }
+  if (!options.allowPartial && !isPlainDataObject(record.fieldValues) && !isPlainDataObject(record.collectionValues)) {
+    throwInvalidDataPayload("Record payload must include fieldValues or collectionValues.");
+  }
+  return {
+    ...structuredClone(record),
+    entityKey: String(record.entityKey ?? entityKey)
+  };
+}
+
+function mergeDataRecord(existingRecord, patch, entityKey, recordId) {
+  return {
+    ...existingRecord,
+    ...patch,
+    id: recordId,
+    entityKey,
+    fieldValues: {
+      ...(existingRecord.fieldValues ?? {}),
+      ...(patch.fieldValues ?? {})
+    },
+    collectionValues: {
+      ...(existingRecord.collectionValues ?? {}),
+      ...(patch.collectionValues ?? {})
+    },
+    meta: {
+      ...(existingRecord.meta ?? {}),
+      ...(patch.meta ?? {})
+    }
+  };
+}
+
+function createDataRecordId(entityKey, records) {
+  const fallbackPrefix = entityKey.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "REC";
+  const prefix = {
+    application: "APP",
+    dataset: "DATA",
+    controller_protocol: "CTRL",
+    processor_protocol: "PROC"
+  }[entityKey] ?? fallbackPrefix;
+  const usedIds = new Set(records.map((record) => String(record?.id ?? "")));
+  for (let index = records.length + 1; index < records.length + 10000; index += 1) {
+    const candidate = `${prefix}-${String(index).padStart(3, "0")}`;
+    if (!usedIds.has(candidate)) {
+      return candidate;
+    }
+  }
+  return `${prefix}-${randomUUID()}`;
+}
+
+function isPlainDataObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function throwInvalidDataPayload(message) {
+  const error = new Error(message);
+  error.code = "invalid_data_payload";
+  throw error;
+}
+
 function createAuthSession(res, user) {
   const sessionId = createToken(48);
   const expiresAt = Date.now() + authConfig.sessionMaxAgeMs;
@@ -1002,7 +1489,7 @@ function timingSafeStringEqual(actual, expected) {
   return timingSafeEqual(actualBuffer, expectedBuffer);
 }
 
-function requireAuthenticatedRequest(req, res, next) {
+async function requireAuthenticatedRequest(req, res, next) {
   if (!authConfig.required) {
     next();
     return;
@@ -1012,6 +1499,19 @@ function requireAuthenticatedRequest(req, res, next) {
   if (session) {
     req.authUser = session.user;
     next();
+    return;
+  }
+
+  try {
+    const apiKeySession = await readApiKeySession(req);
+    if (apiKeySession) {
+      req.authUser = apiKeySession.user;
+      req.apiKey = apiKeySession.apiKey;
+      next();
+      return;
+    }
+  } catch (error) {
+    next(error);
     return;
   }
 
@@ -1159,6 +1659,248 @@ function parseCsv(value) {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function buildOpenApiSpec() {
+  const jsonOk = (schemaRef) => ({
+    description: "OK",
+    content: { "application/json": { schema: { $ref: schemaRef } } }
+  });
+  const errorResponse = {
+    description: "Error",
+    content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } }
+  };
+
+  return {
+    openapi: "3.1.0",
+    info: {
+      title: "SystemKontroll API",
+      version: "1.0.0",
+      description: "APIs for authentication, user administration, API keys, and SystemKontroll data."
+    },
+    servers: [{ url: authConfig.baseUrl }],
+    security: [{ bearerAuth: [] }, { apiKeyHeader: [] }, { cookieAuth: [] }],
+    paths: {
+      "/api/auth/local": {
+        post: {
+          tags: ["Authentication"],
+          security: [],
+          summary: "Log in with local credentials",
+          requestBody: jsonRequest("#/components/schemas/LocalLoginRequest"),
+          responses: { 200: jsonOk("#/components/schemas/AuthSession"), 401: errorResponse }
+        }
+      },
+      "/api/auth/session": {
+        get: {
+          tags: ["Authentication"],
+          security: [],
+          summary: "Read current session",
+          responses: { 200: jsonOk("#/components/schemas/AuthSession") }
+        }
+      },
+      "/api/users": {
+        get: { tags: ["Users"], summary: "List users", responses: { 200: jsonOk("#/components/schemas/UserList"), 403: errorResponse } },
+        post: {
+          tags: ["Users"],
+          summary: "Create user",
+          requestBody: jsonRequest("#/components/schemas/UserWrite"),
+          responses: { 201: jsonOk("#/components/schemas/UserResponse"), 400: errorResponse, 403: errorResponse }
+        }
+      },
+      "/api/users/{userId}": {
+        put: {
+          tags: ["Users"],
+          summary: "Update user",
+          parameters: [pathParameter("userId")],
+          requestBody: jsonRequest("#/components/schemas/UserWrite"),
+          responses: { 200: jsonOk("#/components/schemas/UserResponse"), 404: errorResponse }
+        }
+      },
+      "/api/users/{userId}/password": {
+        post: {
+          tags: ["Users"],
+          summary: "Set local user password",
+          parameters: [pathParameter("userId")],
+          requestBody: jsonRequest("#/components/schemas/PasswordUpdate"),
+          responses: { 200: jsonOk("#/components/schemas/UserResponse"), 404: errorResponse }
+        }
+      },
+      "/api/api-keys": {
+        get: { tags: ["API keys"], summary: "List API keys", responses: { 200: jsonOk("#/components/schemas/ApiKeyList"), 403: errorResponse } },
+        post: {
+          tags: ["API keys"],
+          summary: "Create API key",
+          requestBody: jsonRequest("#/components/schemas/ApiKeyCreate"),
+          responses: { 201: jsonOk("#/components/schemas/ApiKeyCreated"), 400: errorResponse, 403: errorResponse }
+        }
+      },
+      "/api/api-keys/{keyId}/revoke": {
+        post: {
+          tags: ["API keys"],
+          summary: "Revoke API key",
+          parameters: [pathParameter("keyId")],
+          responses: { 200: jsonOk("#/components/schemas/ApiKeyResponse"), 404: errorResponse }
+        }
+      },
+      "/api/data/state": {
+        get: { tags: ["Data"], summary: "Export full state", responses: { 200: jsonOk("#/components/schemas/AppState") } },
+        put: {
+          tags: ["Data"],
+          summary: "Replace full state",
+          requestBody: jsonRequest("#/components/schemas/AppState"),
+          responses: { 200: jsonOk("#/components/schemas/AppState"), 403: errorResponse }
+        }
+      },
+      "/api/data/entities": {
+        get: { tags: ["Data"], summary: "List entity collections", responses: { 200: jsonOk("#/components/schemas/EntityCollections") } }
+      },
+      "/api/data/entities/{entityKey}": {
+        get: {
+          tags: ["Data"],
+          summary: "List entity records",
+          parameters: [pathParameter("entityKey")],
+          responses: { 200: jsonOk("#/components/schemas/EntityRecords"), 404: errorResponse }
+        },
+        post: {
+          tags: ["Data"],
+          summary: "Create entity record",
+          parameters: [pathParameter("entityKey")],
+          requestBody: jsonRequest("#/components/schemas/DataRecordWrite"),
+          responses: { 201: jsonOk("#/components/schemas/DataRecordResponse"), 409: errorResponse }
+        }
+      },
+      "/api/data/entities/{entityKey}/{recordId}": {
+        get: {
+          tags: ["Data"],
+          summary: "Read entity record",
+          parameters: [pathParameter("entityKey"), pathParameter("recordId")],
+          responses: { 200: jsonOk("#/components/schemas/DataRecordResponse"), 404: errorResponse }
+        },
+        put: {
+          tags: ["Data"],
+          summary: "Replace entity record",
+          parameters: [pathParameter("entityKey"), pathParameter("recordId")],
+          requestBody: jsonRequest("#/components/schemas/DataRecordWrite"),
+          responses: { 200: jsonOk("#/components/schemas/DataRecordResponse"), 404: errorResponse }
+        },
+        patch: {
+          tags: ["Data"],
+          summary: "Patch entity record",
+          parameters: [pathParameter("entityKey"), pathParameter("recordId")],
+          requestBody: jsonRequest("#/components/schemas/DataRecordWrite"),
+          responses: { 200: jsonOk("#/components/schemas/DataRecordResponse"), 404: errorResponse }
+        },
+        delete: {
+          tags: ["Data"],
+          summary: "Delete entity record",
+          parameters: [pathParameter("entityKey"), pathParameter("recordId")],
+          responses: { 200: jsonOk("#/components/schemas/DeleteResponse"), 404: errorResponse }
+        }
+      },
+      "/api/data/records/{recordKey}": {
+        get: {
+          tags: ["Data"],
+          summary: "Read singleton record",
+          parameters: [pathParameter("recordKey")],
+          responses: { 200: jsonOk("#/components/schemas/DataRecordResponse"), 404: errorResponse }
+        },
+        put: {
+          tags: ["Data"],
+          summary: "Replace singleton record",
+          parameters: [pathParameter("recordKey")],
+          requestBody: jsonRequest("#/components/schemas/DataRecordWrite"),
+          responses: { 200: jsonOk("#/components/schemas/DataRecordResponse"), 404: errorResponse }
+        }
+      },
+      "/api/data/settings": {
+        get: { tags: ["Data"], summary: "Read settings", responses: { 200: jsonOk("#/components/schemas/SettingsResponse") } },
+        put: {
+          tags: ["Data"],
+          summary: "Replace settings",
+          requestBody: jsonRequest("#/components/schemas/SettingsResponse"),
+          responses: { 200: jsonOk("#/components/schemas/SettingsResponse") }
+        }
+      },
+      "/api/data/organization-structure": {
+        get: { tags: ["Data"], summary: "Read organization structure", responses: { 200: jsonOk("#/components/schemas/OrganizationStructureResponse") } },
+        put: {
+          tags: ["Data"],
+          summary: "Replace organization structure",
+          requestBody: jsonRequest("#/components/schemas/OrganizationStructureResponse"),
+          responses: { 200: jsonOk("#/components/schemas/OrganizationStructureResponse") }
+        }
+      }
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "SystemKontroll API key" },
+        apiKeyHeader: { type: "apiKey", in: "header", name: "X-API-Key" },
+        cookieAuth: { type: "apiKey", in: "cookie", name: authConfig.cookieName }
+      },
+      schemas: buildOpenApiSchemas()
+    }
+  };
+}
+
+function buildOpenApiSchemas() {
+  const freeObject = { type: "object", additionalProperties: true };
+  const role = { type: "string", enum: ["admin", "editor", "viewer"] };
+  return {
+    Error: { type: "object", properties: { error: { type: "string" }, detail: { type: "string" } } },
+    LocalLoginRequest: { type: "object", required: ["identifier", "password"], properties: { identifier: { type: "string" }, password: { type: "string", format: "password" } } },
+    AuthSession: { type: "object", additionalProperties: true },
+    User: { type: "object", additionalProperties: true, properties: { id: { type: "string" }, email: { type: "string" }, displayName: { type: "string" }, role, status: { type: "string", enum: ["active", "disabled"] }, localEnabled: { type: "boolean" } } },
+    UserWrite: { type: "object", required: ["email", "displayName", "role", "status"], properties: { email: { type: "string" }, username: { type: "string" }, displayName: { type: "string" }, role, status: { type: "string", enum: ["active", "disabled"] }, localEnabled: { type: "boolean" }, password: { type: "string", format: "password" } } },
+    UserList: { type: "object", properties: { users: { type: "array", items: { $ref: "#/components/schemas/User" } } } },
+    UserResponse: { type: "object", properties: { user: { $ref: "#/components/schemas/User" } } },
+    PasswordUpdate: { type: "object", required: ["password"], properties: { password: { type: "string", format: "password" } } },
+    ApiKey: { type: "object", additionalProperties: true, properties: { id: { type: "string" }, name: { type: "string" }, keyPrefix: { type: "string" }, role, status: { type: "string", enum: ["active", "revoked"] } } },
+    ApiKeyCreate: { type: "object", required: ["name", "role"], properties: { name: { type: "string" }, role } },
+    ApiKeyCreated: { type: "object", properties: { apiKey: { $ref: "#/components/schemas/ApiKey" }, token: { type: "string" } } },
+    ApiKeyList: { type: "object", properties: { apiKeys: { type: "array", items: { $ref: "#/components/schemas/ApiKey" } } } },
+    ApiKeyResponse: { type: "object", properties: { apiKey: { $ref: "#/components/schemas/ApiKey" } } },
+    AppState: { type: "object", additionalProperties: true },
+    EntityCollections: { type: "object", additionalProperties: true },
+    EntityRecords: { type: "object", properties: { entityKey: { type: "string" }, records: { type: "array", items: { $ref: "#/components/schemas/DataRecord" } } } },
+    DataRecord: { type: "object", additionalProperties: true, properties: { id: { type: "string" }, entityKey: { type: "string" }, fieldValues: freeObject, collectionValues: freeObject, meta: freeObject } },
+    DataRecordWrite: { type: "object", additionalProperties: true },
+    DataRecordResponse: { type: "object", properties: { record: { $ref: "#/components/schemas/DataRecord" } } },
+    DeleteResponse: { type: "object", properties: { deleted: { type: "boolean" }, record: { $ref: "#/components/schemas/DataRecord" } } },
+    SettingsResponse: { type: "object", properties: { settings: freeObject } },
+    OrganizationStructureResponse: { type: "object", properties: { organizationStructure: { type: "array", items: freeObject } } }
+  };
+}
+
+function jsonRequest(schemaRef) {
+  return { required: true, content: { "application/json": { schema: { $ref: schemaRef } } } };
+}
+
+function pathParameter(name) {
+  return { name, in: "path", required: true, schema: { type: "string" } };
+}
+
+function renderSwaggerUiPage() {
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SystemKontroll API Docs</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+      window.ui = SwaggerUIBundle({
+        url: "/openapi.json",
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        persistAuthorization: true
+      });
+    </script>
+  </body>
+</html>`;
 }
 
 function purgeExpiredAuthRecords() {

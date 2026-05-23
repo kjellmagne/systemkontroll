@@ -629,6 +629,13 @@ body:has(.shell[data-appearance="dark"]) {
   align-items: start;
 }
 
+.apiKeysGrid {
+  display: grid;
+  grid-template-columns: minmax(340px, 0.8fr) minmax(520px, 1.2fr);
+  gap: 20px;
+  align-items: start;
+}
+
 .userAdminList,
 .userAdminEditor {
   min-width: 0;
@@ -658,6 +665,12 @@ body:has(.shell[data-appearance="dark"]) {
 
 .userAdminForm {
   gap: 14px;
+}
+
+.apiTokenText textarea {
+  min-height: 92px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
 }
 
 .settingsLabelChipEditor {
@@ -2731,6 +2744,7 @@ body:has(.shell[data-appearance="dark"]) {
 
   .orgWorkspace,
   .orgGrid,
+  .apiKeysGrid,
   .userAdminGrid,
   .sectionGrid {
     grid-template-columns: 1fr;

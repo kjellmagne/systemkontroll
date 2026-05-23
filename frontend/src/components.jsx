@@ -2306,6 +2306,10 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   const [selectedUserId, setSelectedUserId] = React.useState("");
   const [userForm, setUserForm] = React.useState(createBlankUserForm());
   const [passwordDraft, setPasswordDraft] = React.useState("");
+  const [apiKeys, setApiKeys] = React.useState([]);
+  const [isApiKeysLoading, setIsApiKeysLoading] = React.useState(false);
+  const [apiKeyForm, setApiKeyForm] = React.useState({ name: "", role: "viewer" });
+  const [createdApiToken, setCreatedApiToken] = React.useState("");
   const [inlineCatalogAdd, setInlineCatalogAdd] = React.useState({ key: null, value: "", description: "", color: "blue" });
   const inlineCatalogTriggerRefs = React.useRef({});
   const inlineCatalogPanelRef = React.useRef(null);
@@ -2368,6 +2372,13 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
       return;
     }
     loadUsers();
+  }, [activeSettingsTab, isUserAdmin]);
+
+  React.useEffect(() => {
+    if (activeSettingsTab !== "apiKeys" || !isUserAdmin) {
+      return;
+    }
+    loadApiKeys();
   }, [activeSettingsTab, isUserAdmin]);
 
   React.useEffect(() => {
@@ -2456,6 +2467,145 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
     setSelectedUserId("");
     setUserForm(createBlankUserForm());
     setPasswordDraft("");
+  }
+
+  async function loadApiKeys() {
+    try {
+      setIsApiKeysLoading(true);
+      const response = await fetch("/api/api-keys");
+      if (!response.ok) {
+        throw new Error("Klarte ikke å hente API-nøkler.");
+      }
+      const payload = await response.json();
+      setApiKeys(payload.apiKeys ?? []);
+    } catch (error) {
+      showToast(error.message ?? "Klarte ikke å hente API-nøkler.", "error");
+    } finally {
+      setIsApiKeysLoading(false);
+    }
+  }
+
+  async function createApiKey() {
+    try {
+      const response = await fetch("/api/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(apiKeyForm)
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.detail ?? "API-nøkkelen kunne ikke opprettes.");
+      }
+      const payload = await response.json();
+      setCreatedApiToken(payload.token ?? "");
+      setApiKeyForm({ name: "", role: "viewer" });
+      await loadApiKeys();
+      showToast("API-nøkkel opprettet.");
+    } catch (error) {
+      showToast(error.message ?? "API-nøkkelen kunne ikke opprettes.", "error");
+    }
+  }
+
+  async function revokeApiKey(keyId) {
+    try {
+      const response = await fetch(`/api/api-keys/${keyId}/revoke`, { method: "POST" });
+      if (!response.ok) {
+        throw new Error("API-nøkkelen kunne ikke tilbakekalles.");
+      }
+      await loadApiKeys();
+      showToast("API-nøkkel tilbakekalt.");
+    } catch (error) {
+      showToast(error.message ?? "API-nøkkelen kunne ikke tilbakekalles.", "error");
+    }
+  }
+
+  function renderApiKeysTab() {
+    if (!isUserAdmin) {
+      return (
+        <Card className="settingsCard settingsCard--fullWidth" appearance="filled-alternative">
+          <div className="headerStack compact">
+            <Title3>API-nøkler</Title3>
+            <Body1>Du må være administrator for å administrere API-nøkler.</Body1>
+          </div>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="apiKeysGrid">
+        <Card className="settingsCard" appearance="filled-alternative">
+          <div className="headerStack compact">
+            <Title3>Ny API-nøkkel</Title3>
+            <Body1>Nøkkelen vises bare én gang. Bruk den som Bearer-token mot OpenAPI-endepunktene.</Body1>
+          </div>
+          <div className="userAdminForm">
+            <Field label="Navn">
+              <Input value={apiKeyForm.name} onChange={(event) => setApiKeyForm((current) => ({ ...current, name: event.target.value }))} />
+            </Field>
+            <Field label="Rolle">
+              <Dropdown value={roleLabel(apiKeyForm.role)} selectedOptions={[apiKeyForm.role]} onOptionSelect={(_event, data) => setApiKeyForm((current) => ({ ...current, role: data.optionValue }))}>
+                <Option value="admin">Administrator</Option>
+                <Option value="editor">Redaktør</Option>
+                <Option value="viewer">Lesetilgang</Option>
+              </Dropdown>
+            </Field>
+            <Button appearance="primary" onClick={createApiKey}>
+              Opprett API-nøkkel
+            </Button>
+            {createdApiToken ? (
+              <Field label="Ny nøkkel">
+                <Textarea className="apiTokenText" readOnly value={createdApiToken} />
+              </Field>
+            ) : null}
+          </div>
+        </Card>
+
+        <Card className="settingsCard" appearance="filled-alternative">
+          <div className="cardHeader">
+            <div className="headerStack compact">
+              <Title3>Aktive og tilbakekalte nøkler</Title3>
+              <Body1>{isApiKeysLoading ? "Laster API-nøkler..." : `${apiKeys.length} nøkler registrert`}</Body1>
+            </div>
+            <Button appearance="secondary" onClick={loadApiKeys}>
+              Oppdater
+            </Button>
+          </div>
+          <Table size="small" className="userAdminTable">
+            <TableHeader>
+              <TableRow>
+                <TableHeaderCell>Navn</TableHeaderCell>
+                <TableHeaderCell>Rolle</TableHeaderCell>
+                <TableHeaderCell>Status</TableHeaderCell>
+                <TableHeaderCell>Handling</TableHeaderCell>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {apiKeys.map((apiKey) => (
+                <TableRow key={apiKey.id}>
+                  <TableCell>
+                    <div className="userAdminIdentity">
+                      <Text weight="semibold">{apiKey.name}</Text>
+                      <Text size={200}>{apiKey.keyPrefix}</Text>
+                    </div>
+                  </TableCell>
+                  <TableCell>{roleLabel(apiKey.role)}</TableCell>
+                  <TableCell>
+                    <Badge appearance={apiKey.status === "active" ? "filled" : "outline"}>
+                      {apiKey.status === "active" ? "Aktiv" : "Tilbakekalt"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button size="small" disabled={apiKey.status !== "active"} onClick={() => revokeApiKey(apiKey.id)}>
+                      Tilbakekall
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
+    );
   }
 
   function renderUsersTab() {
@@ -2835,6 +2985,7 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
       <TabList selectedValue={activeSettingsTab} onTabSelect={(_event, data) => setActiveSettingsTab(String(data.value))}>
         <Tab value="catalogs">Registere</Tab>
         <Tab value="users">Brukere</Tab>
+        <Tab value="apiKeys">API-nøkler</Tab>
         <Tab value="themes">Tema og farger</Tab>
       </TabList>
 
@@ -2914,6 +3065,8 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
         </>
       ) : activeSettingsTab === "users" ? (
         renderUsersTab()
+      ) : activeSettingsTab === "apiKeys" ? (
+        renderApiKeysTab()
       ) : (
         <Card className="settingsCard settingsCard--fullWidth" appearance="filled-alternative">
           <div className="headerStack compact">
