@@ -919,7 +919,16 @@ export default function App() {
   if (authSession?.authRequired && !authSession.authenticated) {
     return (
       <FluentProvider theme={fluentTheme}>
-        <LoginPage providers={authSession.providers ?? []} />
+        <LoginPage
+          onAuthenticated={(user) => {
+            setAuthSession((previousSession) => ({
+              ...(previousSession ?? { authRequired: true, providers: [] }),
+              authenticated: true,
+              user
+            }));
+          }}
+          providers={authSession.providers ?? []}
+        />
       </FluentProvider>
     );
   }
@@ -1080,7 +1089,7 @@ export default function App() {
   );
 }
 
-function LoginPage({ providers }) {
+function LoginPage({ onAuthenticated, providers }) {
   const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash || "#/applications"}`;
   const localProvider = providers.find((provider) => provider.type === "local");
   const externalProviders = providers.filter((provider) => provider.type !== "local");
@@ -1105,7 +1114,13 @@ function LoginPage({ providers }) {
         throw new Error("Feil brukernavn eller passord.");
       }
 
-      window.location.href = returnTo;
+      const payload = await response.json();
+      onAuthenticated?.(payload.user);
+
+      const targetUrl = new URL(returnTo, window.location.origin);
+      if (targetUrl.href !== window.location.href) {
+        window.location.href = targetUrl.href;
+      }
     } catch (loginError) {
       setError(loginError.message ?? "Innlogging feilet.");
     } finally {
