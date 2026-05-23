@@ -79,6 +79,7 @@ export default function App() {
     datasets: { hosting: "all", privacy: "all" }
   });
   const [dialogState, setDialogState] = useState(null);
+  const [isSettingsWindowOpen, setIsSettingsWindowOpen] = useState(false);
   const [selectedOrgNodeId, setSelectedOrgNodeId] = useState("");
   const [systemPrefersDark, setSystemPrefersDark] = useState(false);
   const { dispatchToast } = useToastController(toasterId);
@@ -219,6 +220,21 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isSettingsWindowOpen) {
+      return undefined;
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        setIsSettingsWindowOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSettingsWindowOpen]);
+
   const routeInfo = useMemo(() => parseHash(hash), [hash]);
   const currentScreen = useMemo(() => {
     if (!bootstrap?.screenRegistry) {
@@ -227,6 +243,10 @@ export default function App() {
 
     return resolveScreen(bootstrap.screenRegistry, routeInfo.routePath) ?? bootstrap.screenRegistry[0];
   }, [bootstrap, routeInfo.routePath]);
+  const settingsScreen = useMemo(
+    () => bootstrap?.screenRegistry?.find((screen) => screen.navKey === "settings" || screen.route === "#/settings") ?? null,
+    [bootstrap]
+  );
 
   const currentStructure = useMemo(() => {
     if (!currentScreen || !model?.structures) {
@@ -886,6 +906,7 @@ export default function App() {
   }
 
   function navigateTo(href) {
+    setIsSettingsWindowOpen(false);
     window.location.hash = href.startsWith("#") ? href : `#${href}`;
   }
 
@@ -1003,31 +1024,30 @@ export default function App() {
           </div>
 
           <div className="sidebarBottom">
-            {NAV_BOTTOM_ITEMS.map((item) => (
-              (() => {
-                const Icon = bottomNavIcons[item.key] ?? SettingsRegular;
-                return (
-              <Button
-                key={item.key}
-                appearance="subtle"
-                size="large"
-                icon={<Icon />}
-                className={`navButton ${currentScreen.navKey === item.key ? "isActive" : ""}`}
-                onClick={() => {
-                  if (item.key === "settings") {
-                    navigateTo(item.href);
-                  } else if (item.key === "logout") {
-                    handleLogout();
-                  } else {
-                    showToast(`${item.label} er ikke implementert ennå.`, "info");
-                  }
-                }}
-              >
-                {item.label}
-              </Button>
-                );
-              })()
-            ))}
+            {NAV_BOTTOM_ITEMS.map((item) => {
+              const Icon = bottomNavIcons[item.key] ?? SettingsRegular;
+              const isActive = currentScreen.navKey === item.key || (item.key === "settings" && isSettingsWindowOpen);
+              return (
+                <Button
+                  key={item.key}
+                  appearance="subtle"
+                  size="large"
+                  icon={<Icon />}
+                  className={`navButton ${isActive ? "isActive" : ""}`}
+                  onClick={() => {
+                    if (item.key === "settings") {
+                      setIsSettingsWindowOpen(true);
+                    } else if (item.key === "logout") {
+                      handleLogout();
+                    } else {
+                      showToast(`${item.label} er ikke implementert ennå.`, "info");
+                    }
+                  }}
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
           </div>
         </aside>
 
@@ -1090,6 +1110,53 @@ export default function App() {
             </div>
           </main>
         </div>
+        {isSettingsWindowOpen && settingsScreen ? (
+          <div className="settingsWindowOverlay" role="presentation" onMouseDown={() => setIsSettingsWindowOpen(false)}>
+            <section
+              aria-label="Innstillinger"
+              aria-modal="true"
+              className="settingsWindow"
+              onMouseDown={(event) => event.stopPropagation()}
+              role="dialog"
+            >
+              <div className="settingsWindowChrome">
+                <Text weight="semibold">Innstillinger</Text>
+                <Button appearance="subtle" onClick={() => setIsSettingsWindowOpen(false)}>
+                  Lukk
+                </Button>
+              </div>
+              <div className="settingsWindowBody">
+                <PageRenderer
+                  appState={appState}
+                  authSession={authSession}
+                  bootstrap={bootstrap}
+                  closeDialog={closeDialog}
+                  currentRecord={null}
+                  currentScreen={settingsScreen}
+                  currentStructure={model?.structures?.[settingsScreen.entityKey] ?? null}
+                  dialogState={dialogState}
+                  hashInfo={{ routePath: "#/settings", query: {} }}
+                  isDirty={isDirty}
+                  isSaving={isSaving}
+                  navigateTo={navigateTo}
+                  openDialog={openDialog}
+                  onAction={handlePageAction}
+                  searchState={searchState}
+                  selectedOrgNode={selectedOrgNode}
+                  selectedOrgNodeId={selectedOrgNodeId}
+                  setFilters={setListFilters}
+                  setSearchState={setSearchState}
+                  setSelectedOrgNodeId={setSelectedOrgNodeId}
+                  showToast={showToast}
+                  submitDialog={submitDialog}
+                  updateDialogField={updateDialogField}
+                  updateDraft={updateDraft}
+                  filters={listFilters}
+                />
+              </div>
+            </section>
+          </div>
+        ) : null}
       </div>
     </FluentProvider>
   );

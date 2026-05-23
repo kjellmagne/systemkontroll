@@ -356,6 +356,44 @@ body:has(.shell[data-appearance="dark"]) {
   margin: 0 auto;
 }
 
+.settingsWindowOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(17, 24, 39, 0.36);
+}
+
+.settingsWindow {
+  width: min(1180px, calc(100vw - 48px));
+  max-height: min(860px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: var(--surface-page);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+}
+
+.settingsWindowChrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-card);
+}
+
+.settingsWindowBody {
+  min-height: 0;
+  overflow: auto;
+  padding: 22px;
+}
+
 .loadingShell {
   min-height: 100vh;
   display: grid;
@@ -2789,6 +2827,19 @@ body:has(.shell[data-appearance="dark"]) {
 
   .main {
     padding: 20px 16px 40px;
+  }
+
+  .settingsWindowOverlay {
+    padding: 12px;
+  }
+
+  .settingsWindow {
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .settingsWindowBody {
+    padding: 16px;
   }
 
   .topSearch,
