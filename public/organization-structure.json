@@ -1,0 +1,954 @@
+[
+  {
+    "id": "service-area-4",
+    "serviceArea": "Organisasjon og økonomi",
+    "description": "Stabsområde. Leder: Monika Olsen",
+    "organizations": [
+      {
+        "id": "organization-7",
+        "name": "Lønn og personal",
+        "description": "Virksomhet. Leder: Hanne Kristine Molberg",
+        "departments": []
+      },
+      {
+        "id": "organization-8",
+        "name": "HR og organisasjonsutvikling",
+        "description": "Virksomhet. Leder: Viggo Johannessen",
+        "departments": [
+          {
+            "id": "department-158",
+            "name": "Lærlinger",
+            "description": "Avdeling. Leder: Irene Lille"
+          }
+        ]
+      },
+      {
+        "id": "organization-9",
+        "name": "Regnskap",
+        "description": "Virksomhet. Leder: Kathrine Ernstsen Leinan",
+        "departments": []
+      },
+      {
+        "id": "organization-10",
+        "name": "Budsjett",
+        "description": "Virksomhet. Leder: Monika Olsen",
+        "departments": []
+      },
+      {
+        "id": "organization-11",
+        "name": "Servicesenteret",
+        "description": "Virksomhet. Leder: Bjørn Conrad Berg",
+        "departments": [
+          {
+            "id": "department-188",
+            "name": "Politisk",
+            "description": "Avdeling. Leder: Bjørn Conrad Berg"
+          }
+        ]
+      },
+      {
+        "id": "organization-12",
+        "name": "IKT og digitalisering",
+        "description": "Virksomhet. Leder: Kjell Magne Gabrielsen",
+        "departments": []
+      },
+      {
+        "id": "organization-167",
+        "name": "Tilsynsfører",
+        "description": "Virksomhet. Leder: Monika Olsen",
+        "departments": []
+      }
+    ]
+  },
+  {
+    "id": "service-area-6",
+    "serviceArea": "Samfunnsutvikling",
+    "description": "Tjenesteområde. Leder: Silje Ingebrigtsen",
+    "organizations": [
+      {
+        "id": "organization-125",
+        "name": "Areal-og samfunnsplanlegging",
+        "description": "Avdeling. Leder: Veslemøy Grindvik",
+        "departments": []
+      },
+      {
+        "id": "organization-126",
+        "name": "Næringsutvikling",
+        "description": "Avdeling. Leder: Tron Møller Natland",
+        "departments": []
+      },
+      {
+        "id": "organization-127",
+        "name": "Jord-og skogbruk",
+        "description": "Avdeling. Leder: Tron Møller Natland",
+        "departments": []
+      },
+      {
+        "id": "organization-128",
+        "name": "Boligservicekontoret",
+        "description": "Avdeling. Leder: Sunniva Bogetun Johansen",
+        "departments": []
+      }
+    ]
+  },
+  {
+    "id": "service-area-13",
+    "serviceArea": "Oppvekst og kultur",
+    "description": "Tjenesteområde. Leder: Bjørn Pedersen",
+    "organizations": [
+      {
+        "id": "organization-18",
+        "name": "Oppvekstadministrasjonen",
+        "description": "Virksomhet. Leder: Bjørn Pedersen",
+        "departments": []
+      },
+      {
+        "id": "organization-20",
+        "name": "Alta ungdomsskole",
+        "description": "Virksomhet. Leder: Nina Martinsen",
+        "departments": [
+          {
+            "id": "department-168",
+            "name": "Alta ungdomsskole - SPA",
+            "description": "Avdeling. Leder: Nina Martinsen"
+          }
+        ]
+      },
+      {
+        "id": "organization-21",
+        "name": "Aronnes skole",
+        "description": "Virksomhet. Leder: Vibeke Arntzen",
+        "departments": [
+          {
+            "id": "department-24",
+            "name": "Aronnes SFO",
+            "description": "Avdeling. Leder: Vibeke Arntzen"
+          }
+        ]
+      },
+      {
+        "id": "organization-25",
+        "name": "Bossekop skole",
+        "description": "Virksomhet. Leder: Trude Andersen",
+        "departments": [
+          {
+            "id": "department-42",
+            "name": "Bossekop SFO",
+            "description": "Avdeling. Leder: Trude Andersen"
+          }
+        ]
+      },
+      {
+        "id": "organization-26",
+        "name": "Elvebakken skole",
+        "description": "Virksomhet. Leder: Jan Ivar Knutsen",
+        "departments": [
+          {
+            "id": "department-43",
+            "name": "Elvebakken SFO",
+            "description": "Avdeling. Leder: Jan Ivar Knutsen"
+          }
+        ]
+      },
+      {
+        "id": "organization-44",
+        "name": "Gakori skole",
+        "description": "Virksomhet. Leder: Janne Charlotte Småvik",
+        "departments": [
+          {
+            "id": "department-45",
+            "name": "Gakori SFO",
+            "description": "Avdeling. Leder: Janne Charlotte Småvik"
+          }
+        ]
+      },
+      {
+        "id": "organization-46",
+        "name": "Kaiskuru Nærmiljøsenter",
+        "description": "Virksomhet. Leder: Frank Walseth",
+        "departments": [
+          {
+            "id": "department-47",
+            "name": "Kaiskuru SFO",
+            "description": "Avdeling. Leder: Frank Walseth"
+          },
+          {
+            "id": "department-48",
+            "name": "Kaiskuru barnehage",
+            "description": "Avdeling. Leder: Siri Vebenstad"
+          }
+        ]
+      },
+      {
+        "id": "organization-49",
+        "name": "Komsa skole",
+        "description": "Virksomhet. Leder: Toril Helene Isaksen",
+        "departments": [
+          {
+            "id": "department-50",
+            "name": "Komsa SFO",
+            "description": "Avdeling. Leder: Toril Helene Isaksen"
+          }
+        ]
+      },
+      {
+        "id": "organization-51",
+        "name": "Kvalfjord skole",
+        "description": "Virksomhet. Leder: Martin Westmark",
+        "departments": []
+      },
+      {
+        "id": "organization-52",
+        "name": "Leirbotn skole",
+        "description": "Virksomhet. Leder: Monika Johansen",
+        "departments": [
+          {
+            "id": "department-56",
+            "name": "Leirbotn barnehage",
+            "description": "Avdeling. Leder: Monika Johansen"
+          }
+        ]
+      },
+      {
+        "id": "organization-53",
+        "name": "Rafsbotn skole",
+        "description": "Virksomhet. Leder: Monika Johansen",
+        "departments": [
+          {
+            "id": "department-54",
+            "name": "Rafsbotn SFO",
+            "description": "Avdeling. Leder: Monika Johansen"
+          }
+        ]
+      },
+      {
+        "id": "organization-72",
+        "name": "Talvik skole",
+        "description": "Virksomhet. Leder: Martin Westmark",
+        "departments": [
+          {
+            "id": "department-73",
+            "name": "Talvik SFO",
+            "description": "Avdeling. Leder: Martin Westmark"
+          },
+          {
+            "id": "department-74",
+            "name": "Talvik barnehage",
+            "description": "Avdeling. Leder: Martin Westmark"
+          }
+        ]
+      },
+      {
+        "id": "organization-75",
+        "name": "Tverrelvdalen skole",
+        "description": "Virksomhet. Leder: Janne Cathrin Engseth",
+        "departments": [
+          {
+            "id": "department-76",
+            "name": "Tverrelvdalen SFO",
+            "description": "Avdeling. Leder: Janne Cathrin Engseth"
+          }
+        ]
+      },
+      {
+        "id": "organization-77",
+        "name": "Øvre Alta skole",
+        "description": "Virksomhet. Leder: Siri Marsdal",
+        "departments": [
+          {
+            "id": "department-78",
+            "name": "Øvre Alta SFO",
+            "description": "Avdeling. Leder: Siri Marsdal"
+          }
+        ]
+      },
+      {
+        "id": "organization-79",
+        "name": "Kulturvirksomheten",
+        "description": "Virksomhet. Leder: Tor Helge Reinsnes Moen",
+        "departments": [
+          {
+            "id": "department-80",
+            "name": "Huset",
+            "description": "Avdeling. Leder: Kaja Kristensen"
+          },
+          {
+            "id": "department-81",
+            "name": "Alta Kulturskole",
+            "description": "Avdeling. Leder: Bjørn Roald Mikkelsen"
+          },
+          {
+            "id": "department-82",
+            "name": "Alta Kultursal",
+            "description": "Avdeling. Leder: Tor Helge Reinsnes Moen"
+          },
+          {
+            "id": "department-83",
+            "name": "Alta Bibliotek",
+            "description": "Avdeling. Leder: Sonja-Kristin Granaas"
+          },
+          {
+            "id": "department-85",
+            "name": "AktivBy",
+            "description": "Avdeling. Leder: Tor Helge Reinsnes Moen"
+          },
+          {
+            "id": "department-169",
+            "name": "Sommerskole",
+            "description": "Avdeling. Leder: Sonja-Kristin Granaas"
+          },
+          {
+            "id": "department-175",
+            "name": "Kulturadministrasjonen",
+            "description": "Avdeling. Leder: Tor Helge Reinsnes Moen"
+          }
+        ]
+      },
+      {
+        "id": "organization-86",
+        "name": "Alta Integrerings- og kompetansesenter (AIK)",
+        "description": "Virksomhet. Leder: Vegard Dyrseth",
+        "departments": [
+          {
+            "id": "department-93",
+            "name": "Bosetting og integrering",
+            "description": "Avdeling. Leder: Roger Tobiassen"
+          },
+          {
+            "id": "department-123",
+            "name": "Bosetting og integrering / Introlønn",
+            "description": "Avdeling. Leder: Roger Tobiassen"
+          }
+        ]
+      },
+      {
+        "id": "organization-87",
+        "name": "Sandfallet ungdomsskole",
+        "description": "Virksomhet. Leder: Trine Gleine",
+        "departments": []
+      },
+      {
+        "id": "organization-88",
+        "name": "Saga skole",
+        "description": "Virksomhet. Leder: Birgitte Suhr",
+        "departments": [
+          {
+            "id": "department-89",
+            "name": "Saga SFO",
+            "description": "Avdeling. Leder: Birgitte Suhr"
+          }
+        ]
+      },
+      {
+        "id": "organization-94",
+        "name": "Barn- og ungetjenesten",
+        "description": "Virksomhet. Leder: Lena Johansen",
+        "departments": [
+          {
+            "id": "department-95",
+            "name": "Storbakken ungdomssenter",
+            "description": "Avdeling. Leder: Renate Moe"
+          },
+          {
+            "id": "department-96",
+            "name": "PP-tjenesten",
+            "description": "Avdeling. Leder: Linda Heitmann"
+          },
+          {
+            "id": "department-97",
+            "name": "Helsestasjon og skolehelsetjenesten",
+            "description": "Avdeling. Leder: Tone Dervo"
+          },
+          {
+            "id": "department-98",
+            "name": "Barnevernstjenesten",
+            "description": "Avdeling. Leder: Anne Charlotte Solheim"
+          },
+          {
+            "id": "department-186",
+            "name": "Barnevernstjenesten / Barnevernstjenesten -oppdragstakere",
+            "description": "Avdeling. Leder: Anne Charlotte Solheim"
+          }
+        ]
+      },
+      {
+        "id": "organization-99",
+        "name": "LOM Kompetansesenter",
+        "description": "Virksomhet. Leder: Magne Medlie",
+        "departments": []
+      },
+      {
+        "id": "organization-100",
+        "name": "Tverrelvdalen barnehage",
+        "description": "Virksomhet. Leder: Anita Bakken",
+        "departments": []
+      },
+      {
+        "id": "organization-101",
+        "name": "Rafsbotn barnehage",
+        "description": "Virksomhet. Leder: Lise Jonas",
+        "departments": []
+      },
+      {
+        "id": "organization-102",
+        "name": "Kronstad barnehage",
+        "description": "Virksomhet. Leder: Yvonne Karine Heitmann Kurthi",
+        "departments": []
+      },
+      {
+        "id": "organization-103",
+        "name": "Aronnes barnehage",
+        "description": "Virksomhet. Leder: Dagmar Andreassen",
+        "departments": []
+      },
+      {
+        "id": "organization-104",
+        "name": "Breidablikk barnehage",
+        "description": "Virksomhet. Leder: Gry Merete Røe",
+        "departments": []
+      },
+      {
+        "id": "organization-105",
+        "name": "Sentrum barnehage",
+        "description": "Virksomhet. Leder: Anita Arild Thomassen",
+        "departments": []
+      },
+      {
+        "id": "organization-106",
+        "name": "Saga barnehage",
+        "description": "Virksomhet. Leder: Anita Wahl",
+        "departments": []
+      },
+      {
+        "id": "organization-107",
+        "name": "Oterfaret barnehage",
+        "description": "Virksomhet. Leder: Anne Lill Pedersen",
+        "departments": []
+      },
+      {
+        "id": "organization-108",
+        "name": "Guovddas Manaidgardi",
+        "description": "Virksomhet. Leder: Monika Skum Hætta",
+        "departments": []
+      },
+      {
+        "id": "organization-124",
+        "name": "Styrket tilbud til førskolebarn",
+        "description": "Virksomhet. Leder: Kariann Hætta",
+        "departments": []
+      }
+    ]
+  },
+  {
+    "id": "service-area-14",
+    "serviceArea": "Helse og omsorg",
+    "description": "Tjenesteområde. Leder: John Helland",
+    "organizations": [
+      {
+        "id": "organization-15",
+        "name": "Heldøgns omsorg",
+        "description": "Virksomhet. Leder: Inger Johanne Kristensen",
+        "departments": [
+          {
+            "id": "department-16",
+            "name": "Kilvo",
+            "description": "Avdeling. Leder: Lene Larsen"
+          },
+          {
+            "id": "department-17",
+            "name": "Gabo",
+            "description": "Avdeling. Leder: Trine Kjellmann Losoa"
+          },
+          {
+            "id": "department-19",
+            "name": "Vina",
+            "description": "Avdeling. Leder: Elisabeth Ellila Alexandersen"
+          },
+          {
+            "id": "department-133",
+            "name": "Sierra kortidsavdeling",
+            "description": "Avdeling. Leder: Kathrine Jørgensen"
+          },
+          {
+            "id": "department-145",
+            "name": "Svartfossen",
+            "description": "Avdeling. Leder: Maiken Vian Alsén"
+          },
+          {
+            "id": "department-146",
+            "name": "Steinfossen",
+            "description": "Avdeling. Leder: Lisbeth Sollunn"
+          },
+          {
+            "id": "department-147",
+            "name": "Follumsvei 15",
+            "description": "Avdeling. Leder: Bente Ernstsen"
+          },
+          {
+            "id": "department-159",
+            "name": "Kjøkkendrift",
+            "description": "Avdeling. Leder: Hasse Kåberg"
+          },
+          {
+            "id": "department-177",
+            "name": "Senterledelse",
+            "description": "Avdeling. Leder: Børge Martinussen"
+          },
+          {
+            "id": "department-179",
+            "name": "Gønges",
+            "description": "Avdeling. Leder: Lena Johnsen"
+          },
+          {
+            "id": "department-184",
+            "name": "Sandia",
+            "description": "Avdeling. Leder: Hilde Kathrine Nilsen"
+          },
+          {
+            "id": "department-190",
+            "name": "Tørrfossen",
+            "description": "Avdeling. Leder: Mariel Strøm Opgård"
+          }
+        ]
+      },
+      {
+        "id": "organization-22",
+        "name": "Helse- og sosialadministrasjonen",
+        "description": "Virksomhet. Leder: Ingunn Torbergsen",
+        "departments": [
+          {
+            "id": "department-144",
+            "name": "Alta Frivillighetssentral",
+            "description": "Avdeling. Leder: Olga Solyanik"
+          }
+        ]
+      },
+      {
+        "id": "organization-29",
+        "name": "Demensomsorg",
+        "description": "Virksomhet. Leder: Stina Paulsen",
+        "departments": [
+          {
+            "id": "department-30",
+            "name": "Dagsenter Altagårdshagen",
+            "description": "Avdeling. Leder: Renate Opgård Thomassen"
+          },
+          {
+            "id": "department-32",
+            "name": "Arbeidslag Altagårdshagen",
+            "description": "Avdeling. Leder: Solrun Simonsen"
+          },
+          {
+            "id": "department-34",
+            "name": "Avlastning Altagårdshagen",
+            "description": "Avdeling. Leder: Kine Ellila Kjellmann"
+          },
+          {
+            "id": "department-195",
+            "name": "Avlastning avd. Bjørklund",
+            "description": "Avdeling. Leder: Ina Iversen"
+          }
+        ]
+      },
+      {
+        "id": "organization-35",
+        "name": "Tilrettelagte tjenester",
+        "description": "Virksomhet. Leder: Siri Isaksen",
+        "departments": [
+          {
+            "id": "department-142",
+            "name": "Støttekontaker/Omsst Bistand",
+            "description": "Avdeling. Leder: Siri Isaksen"
+          }
+        ]
+      },
+      {
+        "id": "organization-40",
+        "name": "Habilitering",
+        "description": "Virksomhet. Leder: Anita Herstad Tangen",
+        "departments": [
+          {
+            "id": "department-36",
+            "name": "Skansen Aktivitetssenter",
+            "description": "Avdeling. Leder: Atle Hansen"
+          },
+          {
+            "id": "department-180",
+            "name": "Skansen Aktivitetssenter / Skansen oppdragstaker",
+            "description": "Avdeling. Leder: Atle Hansen"
+          },
+          {
+            "id": "department-37",
+            "name": "Tiltaksbasen",
+            "description": "Avdeling. Leder: Anita Prebensen"
+          },
+          {
+            "id": "department-38",
+            "name": "Sandfalltunet avlastn",
+            "description": "Avdeling. Leder: Anita Prebensen"
+          },
+          {
+            "id": "department-39",
+            "name": "Bomestring",
+            "description": "Avdeling. Leder: Maria Joanna Moilanen"
+          },
+          {
+            "id": "department-57",
+            "name": "Kongleveien",
+            "description": "Avdeling. Leder: Isabell Pedersen"
+          },
+          {
+            "id": "department-58",
+            "name": "Kinoveien",
+            "description": "Avdeling. Leder: Anne-Marit Hansen Günes"
+          },
+          {
+            "id": "department-59",
+            "name": "Skiveien",
+            "description": "Avdeling. Leder: Johanne Kristoffersen"
+          },
+          {
+            "id": "department-60",
+            "name": "Granåsen",
+            "description": "Avdeling. Leder: Grete Høgmo"
+          },
+          {
+            "id": "department-61",
+            "name": "Midtbakkveien 24",
+            "description": "Avdeling. Leder: Benedicte Johanne Rekdal"
+          },
+          {
+            "id": "department-62",
+            "name": "Myrveien",
+            "description": "Avdeling. Leder: May Lene Knutsen Strandheim"
+          },
+          {
+            "id": "department-64",
+            "name": "Trudvang",
+            "description": "Avdeling. Leder: Johanne Kristoffersen"
+          },
+          {
+            "id": "department-65",
+            "name": "Komsahøyden",
+            "description": "Avdeling. Leder: Anne-Marit Hansen Günes"
+          },
+          {
+            "id": "department-66",
+            "name": "Åsveien",
+            "description": "Avdeling. Leder: Jorunn Anette Sætermo"
+          },
+          {
+            "id": "department-67",
+            "name": "Sagastien 33",
+            "description": "Avdeling. Leder: Mai Britt Aslaksen"
+          },
+          {
+            "id": "department-68",
+            "name": "Blokkebærveien",
+            "description": "Avdeling. Leder: Jorunn Anette Sætermo"
+          },
+          {
+            "id": "department-192",
+            "name": "Altaveien",
+            "description": "Avdeling. Leder: Jorunn Anette Sætermo"
+          }
+        ]
+      },
+      {
+        "id": "organization-71",
+        "name": "Hjemmetjenester",
+        "description": "Virksomhet. Leder: Inga Ristiinna Gaup",
+        "departments": [
+          {
+            "id": "department-90",
+            "name": "Hjemmetjenester Alta Vest",
+            "description": "Avdeling. Leder: Unni Haug"
+          },
+          {
+            "id": "department-91",
+            "name": "Hjemmetjenester Alta Øst",
+            "description": "Avdeling. Leder: Ida Frantzen Seppola"
+          },
+          {
+            "id": "department-92",
+            "name": "Hjemmetjenester Altafjord",
+            "description": "Avdeling. Leder: Eva Kristine Bull"
+          },
+          {
+            "id": "department-134",
+            "name": "Mikkeli interm og rehab",
+            "description": "Avdeling. Leder: Marit Toset"
+          },
+          {
+            "id": "department-136",
+            "name": "Hjemmebaserte botiltak",
+            "description": "Avdeling. Leder: Guro Sofie Rønqvist"
+          },
+          {
+            "id": "department-141",
+            "name": "Omsorgslønn",
+            "description": "Avdeling. Leder: Lisa Mathisen"
+          },
+          {
+            "id": "department-143",
+            "name": "Vertshuset",
+            "description": "Avdeling. Leder: Mariann Kristiansen"
+          },
+          {
+            "id": "department-183",
+            "name": "Støttekontakter Omsorg",
+            "description": "Avdeling. Leder: Lisa Mathisen"
+          },
+          {
+            "id": "department-194",
+            "name": "Korttidsavdeling hjemme",
+            "description": "Avdeling. Leder: Berit Elisabeth Utsi Simensen"
+          }
+        ]
+      },
+      {
+        "id": "organization-130",
+        "name": "Mestring og rehabilitering",
+        "description": "Virksomhet. Leder: Tom Erling Henriksen",
+        "departments": []
+      },
+      {
+        "id": "organization-131",
+        "name": "NAV",
+        "description": "Virksomhet. Leder: Randi Viktoria Østgaard",
+        "departments": [
+          {
+            "id": "department-157",
+            "name": "Kvalifiseringsprog",
+            "description": "Avdeling. Leder: Randi Viktoria Østgaard"
+          }
+        ]
+      },
+      {
+        "id": "organization-135",
+        "name": "Livsmestring",
+        "description": "Virksomhet. Leder: Aslaug Murberg",
+        "departments": [
+          {
+            "id": "department-137",
+            "name": "Psykiatri og Rustjenesten",
+            "description": "Avdeling. Leder: Morten Skåttet"
+          },
+          {
+            "id": "department-138",
+            "name": "Maskinsvingen/Lunden",
+            "description": "Avdeling. Leder: Gunn Tove Thomassen"
+          },
+          {
+            "id": "department-139",
+            "name": "ROP tjenesten",
+            "description": "Avdeling. Leder: Lena V Simonsen"
+          },
+          {
+            "id": "department-189",
+            "name": "Mustajokki",
+            "description": "Avdeling. Leder: Ravdna Ristiinna Hætta"
+          }
+        ]
+      },
+      {
+        "id": "organization-140",
+        "name": "Omsorgsboliger",
+        "description": "Virksomhet. Leder: Randi Åkvik",
+        "departments": []
+      },
+      {
+        "id": "organization-148",
+        "name": "Helse og Forebygging",
+        "description": "Virksomhet. Leder: Gøril Alette Karlsen",
+        "departments": [
+          {
+            "id": "department-132",
+            "name": "Ergo- og fysioterapitjenesten",
+            "description": "Avdeling. Leder: Stian Lund-Lyngmo"
+          },
+          {
+            "id": "department-149",
+            "name": "Ikke bruk - Stilla legesenter",
+            "description": "Avdeling. Leder: Ragna Iren Eikanger"
+          },
+          {
+            "id": "department-150",
+            "name": "Ikke bruk - Nordlys legesenter",
+            "description": "Avdeling. Leder: Wenche Bodil Andersen"
+          },
+          {
+            "id": "department-151",
+            "name": "Ikke bruk - Elvebakken legesenter",
+            "description": "Avdeling. Leder: Wenche Bodil Andersen"
+          },
+          {
+            "id": "department-152",
+            "name": "Ikke bruk - Byhagen legesenter",
+            "description": "Avdeling. Leder: Wenche Bodil Andersen"
+          },
+          {
+            "id": "department-153",
+            "name": "Offentlige legeoppgaver",
+            "description": "Avdeling. Leder: Gøril Alette Karlsen"
+          },
+          {
+            "id": "department-154",
+            "name": "Ikke bruk - Sentrum legepraksis",
+            "description": "Avdeling. Leder: Wenche Bodil Andersen"
+          },
+          {
+            "id": "department-156",
+            "name": "Ikke bruk - Legevakt 1",
+            "description": "Avdeling. Leder: Wenche Bodil Andersen"
+          },
+          {
+            "id": "department-172",
+            "name": "Ikke bruk - Legevakt 2",
+            "description": "Avdeling. Leder: Ragna Iren Eikanger"
+          },
+          {
+            "id": "department-174",
+            "name": "Stilla leger",
+            "description": "Avdeling. Leder: Gøril Alette Karlsen"
+          },
+          {
+            "id": "department-201",
+            "name": "Legetjenesten 1",
+            "description": "Avdeling. Leder: Wenche Bodil Andersen"
+          },
+          {
+            "id": "department-203",
+            "name": "Legetjenesten 1 / Byhagen legesenter",
+            "description": "Avdeling. Leder: Wenche Bodil Andersen"
+          },
+          {
+            "id": "department-204",
+            "name": "Legetjenesten 1 / Elvebakken legesenter",
+            "description": "Avdeling. Leder: Wenche Bodil Andersen"
+          },
+          {
+            "id": "department-205",
+            "name": "Legetjenesten 1 / Nordlys legesenter",
+            "description": "Avdeling. Leder: Wenche Bodil Andersen"
+          },
+          {
+            "id": "department-206",
+            "name": "Legetjenesten 1 / Sentrum legepraksis",
+            "description": "Avdeling. Leder: Wenche Bodil Andersen"
+          },
+          {
+            "id": "department-202",
+            "name": "Legetjenesten 2",
+            "description": "Avdeling. Leder: Ragna Iren Eikanger"
+          },
+          {
+            "id": "department-207",
+            "name": "Legetjenesten 2 / Stilla legesenter",
+            "description": "Avdeling. Leder: Ragna Iren Eikanger"
+          },
+          {
+            "id": "department-208",
+            "name": "Legetjenesten 2 / Legevakten",
+            "description": "Avdeling. Leder: Ragna Iren Eikanger"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "service-area-23",
+    "serviceArea": "Bydrift",
+    "description": "Tjenesteområde. Leder: Bengt Fjellheim",
+    "organizations": [
+      {
+        "id": "organization-28",
+        "name": "Tekniske tjenester administrasjon",
+        "description": "Virksomhet. Leder: Bengt Fjellheim",
+        "departments": []
+      },
+      {
+        "id": "organization-109",
+        "name": "Kommunalteknikk",
+        "description": "Virksomhet. Leder: Trond Einar Uglebakken",
+        "departments": [
+          {
+            "id": "department-110",
+            "name": "Parkering",
+            "description": "Avdeling. Leder: Jon-Vegar Nilsen"
+          },
+          {
+            "id": "department-113",
+            "name": "Driftsavdelingen",
+            "description": "Avdeling. Leder: Magne Opgård"
+          }
+        ]
+      },
+      {
+        "id": "organization-112",
+        "name": "Renhold",
+        "description": "Virksomhet. Leder: Therese Kristine Iversen Muotkajærvi",
+        "departments": []
+      },
+      {
+        "id": "organization-114",
+        "name": "Oppmåling og byggsak",
+        "description": "Virksomhet. Leder: Trond Inge Heitmann",
+        "departments": []
+      },
+      {
+        "id": "organization-115",
+        "name": "Miljø, park og idrett",
+        "description": "Virksomhet. Leder: Jon Håvar Haukland",
+        "departments": [
+          {
+            "id": "department-170",
+            "name": "Park og idrett",
+            "description": "Avdeling. Leder: Per Erik Bjørnstad"
+          }
+        ]
+      },
+      {
+        "id": "organization-116",
+        "name": "Kommunale bygg",
+        "description": "Virksomhet. Leder: Katrine Røkenes Nilsen",
+        "departments": [
+          {
+            "id": "department-118",
+            "name": "Drift,kommunale bygg",
+            "description": "Avdeling. Leder: Øyvind Kristiansen"
+          }
+        ]
+      },
+      {
+        "id": "organization-120",
+        "name": "Brann-og redning",
+        "description": "Virksomhet. Leder: Frank Olav Pettersen",
+        "departments": [
+          {
+            "id": "department-121",
+            "name": "Forebyggende brann",
+            "description": "Avdeling. Leder: Roger Thorsen"
+          },
+          {
+            "id": "department-129",
+            "name": "Beredskap brann",
+            "description": "Avdeling. Leder: Kjell-Erik Thomassen"
+          }
+        ]
+      },
+      {
+        "id": "organization-187",
+        "name": "Bygg- og eiendomsutvikling",
+        "description": "Virksomhet. Leder: Kathrine Skau",
+        "departments": []
+      },
+      {
+        "id": "organization-196",
+        "name": "Nordlysbadet",
+        "description": "Virksomhet. Leder: Kjersti Syvertsen",
+        "departments": []
+      }
+    ]
+  }
+]

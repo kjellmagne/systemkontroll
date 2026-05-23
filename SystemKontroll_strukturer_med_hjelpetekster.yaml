@@ -1,0 +1,1897 @@
+schema_version: 1
+exported_at: 2026-03-25
+export_name: SystemKontroll_strukturer_med_hjelpetekster
+notes:
+  - "Denne YAML-filen samler de sju strukturene: Applikasjoner, Datasett, NIS2, Grunnprinsipper for IKT-sikkerhet, Behandlingsansvarlig protokoll, Databehandler protokoll og Roller."
+  - "help_text bevarer synlig hjelpe-/informasjonstekst fra HTML-snippene der den var tilgjengelig."
+  - "Der hjelpetekst ikke var synlig i levert HTML, er help_text satt til null og help_text_status forklarer hvorfor."
+  - "Noen svært lange hjelpetekster er normalisert til lesbar YAML, men innholdet er bevart."
+
+structures:
+  application:
+    entity: Application
+    source:
+      route_pattern: "/digiorden/applications/{id}"
+      example_title: "Visma Ent. HRM"
+      example_subtitle: "Applikasjon"
+      source_status: partial_html_supplied
+    tabs:
+      - key: description
+        label: "Generelt"
+        sections:
+          - key: general_information
+            label: "Grunninformasjon"
+            fields:
+              - key: name
+                label: "Navn"
+                type: text
+                required: true
+                control: input_text
+                placeholder: "Applikasjonsnavn"
+                help_text_mode: raw
+                help_text: "Navn på applikasjon. Eksempel: Microsoft Office 365."
+              - key: version
+                label: "Versjon"
+                type: text
+                required: true
+                control: input_text
+                placeholder: "Versjonsnummer"
+                help_text_mode: raw
+                help_text: "Det anbefales å registrere versjonsnummer ned til 1 desimal. Eksempel: Når en programvare blir oppdatert fra 2.1 til 2.2, anbefales det å registrere en ny applikasjon."
+              - key: vendor
+                label: "Produsent"
+                type: text
+                required: true
+                control: input_text
+                placeholder: "Navn"
+                help_text_mode: raw
+                help_text: "Produsent av programvaren. Eksempel: «Microsoft»."
+              - key: description
+                label: "Beskrivelse"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Beskrivelse"
+                help_text_mode: raw
+                help_text: "Beskrivelse av applikasjon. Hva gjør applikasjonen?"
+              - key: system_responsible
+                label: "Systemansvarlig"
+                type: reference
+                required: false
+                control: select
+                placeholder: "Velg systemansvarlig"
+                option_source: organization_role.system_responsible
+                help_text_mode: raw
+                help_text: "Systemansvarlig for applikasjonen. Brukere som er registrert under organisjonenen kan velges."
+              - key: system_owner
+                label: "Systemeier"
+                type: reference
+                required: false
+                control: select
+                placeholder: "Velg systemeier"
+                option_source: organization_role.system_owner
+                help_text_mode: raw
+                help_text: "Systemeier for applikasjonen. Systemeiere blir lagt til og endret under \"Min organisasjon\" av en organisasjonsadministrator."
+          - key: data_processor_agreements
+            label: "Databehandleravtale"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            fields:
+              - key: not_relevant_for_application
+                label: "Ikke aktuelt for applikasjonen"
+                type: boolean
+                required: false
+                control: checkbox
+            collections:
+              - key: processor_agreements
+                label: "Databehandleravtaler"
+                item_type: agreement
+                add_button_label: "Legg til"
+                columns: []
+          - key: links
+            label: "Relevante lenker"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            collections:
+              - key: links
+                label: "Relevante lenker"
+                item_type: link
+                add_button_label: "Legg til lenke"
+                columns:
+                  - "Lenke"
+                  - "Url"
+                  - "Beskrivelse"
+          - key: accessibility
+            label: "Tilgjengelighet"
+            fields:
+              - key: accessibility_statement_required
+                label: "Tilgjengelighetserklæring er påkrevd"
+                type: boolean
+                required: false
+                control: radio
+                options:
+                  - value: true
+                    label: "Ja"
+                  - value: false
+                    label: "Nei"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Velg Ja dersom applikasjonen er påkrevd til å ha en tilgjengelighetserklæring, ellers velg Nei.
+
+                  Les mer om tilgjengelighetserklæring hos uutilsynet.no.
+              - key: has_accessibility_statement
+                label: "Applikasjon har tilgjengelighetserklæring"
+                type: boolean
+                required: false
+                control: radio
+                options:
+                  - value: true
+                    label: "Ja"
+                  - value: false
+                    label: "Nei"
+                help_text_mode: raw
+                help_text: "Velg Ja dersom applikasjonen har en tilgjengelighetserklæring, ellers velg Nei."
+        actions:
+          - "Send inn til felles kommunalt applikasjonsregister"
+
+      - key: business
+        label: "Brukere"
+        sections:
+          - key: organization_structure
+            label: "Organisasjonstilknytning"
+            help_text: null
+            help_text_status: inferred_from_application_context
+            collections:
+              - key: organization_affiliations
+                label: "Organisasjonstilknytninger"
+                item_type: relation
+                add_button_label: "Legg til tilknytning"
+                columns:
+                  - "Tjenesteområde"
+                  - "Virksomhet"
+                  - "Avdeling"
+          - key: information_security
+            label: "Informasjonssikkerhet"
+            help_text: null
+            help_text_status: inferred_from_documentation
+            collections:
+              - key: information_security_items
+                label: "Informasjonssikkerhet"
+                item_type: document_or_reference
+                add_button_label: "Legg til"
+          - key: criticality
+            label: "Kritikalitet"
+            fields:
+              - key: criticality
+                label: "Kritikalitet"
+                type: enum
+                required: false
+                control: select
+                help_text: null
+                help_text_status: not_visible_in_supplied_html
+                options:
+                  - "Lav"
+                  - "Middels"
+                  - "Høy"
+                  - "Kritisk"
+
+      - key: architecture
+        label: "Arkitektur"
+        sections:
+          - key: visualization
+            label: "Visualisering"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            actions:
+              - "Visualiser arkitektur og relasjoner for applikasjon"
+          - key: datasets
+            label: "Datasett"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            collections:
+              - key: application_dataset_relations
+                label: "Datasett"
+                item_type: relation
+                add_button_label: "Legg til datasett"
+                columns:
+                  - "Navn"
+                  - "Rolle"
+          - key: related_applications
+            label: "Relaterte applikasjoner"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            collections:
+              - key: related_applications
+                label: "Relaterte applikasjoner"
+                item_type: relation
+                add_button_label: "Legg til relasjon mellom applikasjoner"
+                columns:
+                  - "Navn"
+                  - "Relasjon"
+          - key: common_components
+            label: "Nasjonale og kommunale felleskomponenter"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            collections:
+              - key: common_components
+                label: "Felleskomponenter"
+                item_type: reference
+                option_source: common_component_catalog
+                observed_values:
+                  - "ID-porten"
+                  - "Matrikkelen"
+                  - "Enhetsregisteret"
+                  - "Maskinporten"
+                  - "eFormidling"
+                  - "eInnsyn"
+                  - "Felles datakatalog"
+                  - "Fiks del dokument"
+                  - "Fiks eDialog"
+                  - "Fiks folkeregister"
+                  - "Fiks SvarInn"
+                  - "Fiks SvarUt"
+          - key: standards
+            label: "Standarder"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            collections:
+              - key: standards
+                label: "Standarder"
+                item_type: reference
+                option_source: standard_catalog
+                observed_values:
+                  - "REST"
+                  - "SOAP"
+                  - "SAML"
+                  - "OAUTH"
+                  - "WCAG"
+                  - "XML"
+                  - "SQL"
+                  - "Noark3"
+                  - "Noark4"
+                  - "Noark5"
+
+      - key: architecture_reviews
+        label: "Arkitekturvurderinger"
+        sections:
+          - key: review_criteria
+            label: "Vurderinger"
+            help_text: null
+            help_text_status: criteria_specific_help_text_available
+            repeating_item:
+              fields:
+                - key: score
+                  label: "Score"
+                  type: integer
+                  control: radio_1_to_5
+                - key: comment
+                  label: "Kommentar"
+                  type: textarea
+                  control: textarea
+            criteria:
+              - key: service_orientation
+                label: "Tjenesteorientering"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Nasjonalt arkitekturprinsipp:
+                  Funksjonalitet og ytelsesnivå skal være hovedhensyn ved utvikling av IT-løsninger. IT-tjenester som er nødvendig for å understøtte hele eller deler av en eller flere arbeidsprosesser skal identifiseres.
+
+                  Forklaring:
+                  Prinsippet skal understøtte strategisk, effektiv og kostnadseffektiv bruk av IT ved å ta hensyn til hvilke tjenester som leveres av en komponent, fremfor hvordan komponenten er sammensatt. Dette bidrar til å bryte opp siloer og legge til rette for gjenbruk.
+
+                  Konsekvenser:
+                  Virksomheten bør sikre helhet og sammenheng med oppgaveløsningen, og IT-løsninger bør være modulariserte, løst koblet og bruke veldefinerte grensesnitt. Ved videreutvikling eller nyetablering bør virksomheten vurdere om det finnes løsninger eller komponenter som kan gjenbrukes, og om løsningen kan være relevant for andre deler av offentlig sektor.
+              - key: interoperability
+                label: "Interoperabilitet"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Nasjonalt arkitekturprinsipp:
+                  Virksomheten og dens IT-løsninger må ved behov kunne samhandle med andre relevante virksomheter og deres IT-løsninger på et hensiktsmessig nivå.
+
+                  Forklaring:
+                  Prinsippet skal legge til rette for effektiv informasjonsflyt og sikre at IT-utviklingen støtter arbeidsprosesser og regelverk, både internt og på tvers av virksomheter.
+
+                  Prinsippet skiller mellom organisatorisk, semantisk og teknisk interoperabilitet.
+
+                  Konsekvenser:
+                  Behovet for samhandling og konsekvensene for organisatorisk, semantisk og teknisk interoperabilitet skal alltid vurderes. Referansekatalog for IT-standarder i offentlig sektor skal legges til grunn, og åpne standarder skal benyttes der katalogen ikke gir anvisning.
+              - key: accessibility
+                label: "Tilgjengelighet"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Nasjonalt arkitekturprinsipp:
+                  Elektroniske tjenester skal være tilgjengelig når brukerne trenger dem, lette å finne frem til og brukervennlige og universelt utformet.
+
+                  Forklaring:
+                  Tjenestene skal kunne benyttes av alle relevante brukergrupper uavhengig av alder, kjønn, funksjonsevne og kulturell eller etnisk bakgrunn. Prinsippet er særlig relevant for tjenester rettet mot allmennheten.
+
+                  Konsekvenser:
+                  Elektroniske tjenester rettet mot allmennheten må være i tråd med diskriminerings- og tilgjengelighetsloven og annet relevant regelverk. Det bør vurderes standardvalg, kanalvalg, publisering, språktilpasning, åpningstid, teknologi- og plattformuavhengighet, og involvering av relevante brukergrupper i utvikling og testing.
+              - key: security
+                label: "Sikkerhet"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Nasjonalt arkitekturprinsipp:
+                  IT-løsningen i seg selv og informasjonen som behandles i denne, skal med utgangspunkt i formelle og risikobaserte krav beskyttes mot brudd på konfidensialitet, integritet og tilgjengelighet.
+
+                  Forklaring:
+                  Offentlige IT-løsninger skal etableres og driftes på en sikkerhetsmessig god måte. Hver løsning skal klassifiseres basert på risikoanalyse, og krav til konfidensialitet, integritet og tilgjengelighet skal oppfylles.
+
+                  Konsekvenser:
+                  Virksomheten må kartlegge relevant regelverk, dokumentere at løsningen oppfyller kravene, gjennomføre risikoanalyse, tilordne passende sikkerhetsnivå, implementere tiltak og teste at tiltakene fungerer som forventet.
+              - key: openness
+                label: "Åpenhet"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Nasjonalt arkitekturprinsipp:
+                  IT-løsningers virkemåte og datagrunnlag skal kunne gjøres rede for.
+
+                  Forklaring:
+                  Prinsippet skal understøtte rettssikkerheten ved at premissene for avgjørelser er kjent, særlig i beslutnings- og beslutningsstøttesystemer.
+
+                  Konsekvenser:
+                  Løsninger skal utvikles slik at avgjørelser er dokumenterbare og sporbare, og forvalteren må kunne redegjøre for datagrunnlag og regelanvendelse ved behov.
+              - key: flexibility
+                label: "Fleksibilitet"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Nasjonalt arkitekturprinsipp:
+                  IT-løsninger skal være utformet slik at de ikke fremstår som begrensende for endringer i arbeidsprosesser, innhold, organisering, eierskap og infrastruktur.
+
+                  Forklaring:
+                  Prinsippet skal bidra til kostnadseffektivitet ved at løsninger kan tilpasses endrede rammevilkår og fortsatt støtte virksomhetens behov og oppgaveløsning.
+
+                  Konsekvenser:
+                  Tjenester må være definert på hensiktsmessig nivå, løsninger og komponenter må være modulariserte, og organisatoriske forhold og forvaltningsprosesser må kunne håndtere endringsbehov.
+              - key: scalability
+                label: "Skalerbarhet"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Nasjonalt arkitekturprinsipp:
+                  IT-løsninger skal kunne skaleres ved endringer i bruken.
+
+                  Forklaring:
+                  Prinsippet skal bidra til bevisstgjøring om at løsninger fortsatt skal kunne benyttes når antall brukere, volumer, responstider eller livsløp endrer seg.
+
+                  Konsekvenser:
+                  Løsninger og komponenter må være modulariserte slik at de kan opp- og nedskaleres etter at de er satt i drift, og organisatoriske forhold som avtaler og brukerstøtte må kunne skaleres tilsvarende.
+          - key: historical_reviews
+            label: "Tidligere vurderinger"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            collections:
+              - key: historical_reviews
+                label: "Tidligere vurderinger"
+                item_type: table
+                columns:
+                  - "Kriterie"
+                  - "Poengsum"
+                  - "Kommentar"
+                  - "Dato"
+
+      - key: economy
+        label: "Økonomi"
+        sections:
+          - key: financial_overview
+            label: "Økonomi"
+            fields:
+              - key: annual_cost_ex_vat
+                label: "Årlig kostnad eksklusive mva."
+                type: number
+                required: true
+                control: input_text
+                placeholder: "Fyll inn årlig kostnad"
+                help_text_mode: raw
+                help_text: "Angi beløpet systemets helhetlige kostnad eksklusive mva. per år."
+              - key: annual_indirect_cost_ex_vat
+                label: "Årlig indirekte kostnad eksklusive mva."
+                type: number
+                required: true
+                control: input_text
+                placeholder: "Fyll inn årlig indirekte kostnad"
+                help_text_mode: raw
+                help_text: "Årlig indirekte ekstern kostnad eksklusive mva."
+              - key: acquisition_cost
+                label: "Innkjøpskostnad"
+                type: number
+                required: true
+                control: input_text
+                placeholder: "Fyll inn kostnad"
+                help_text_mode: raw
+                help_text: "Angi beløp i norske kroner (uten MVA) for hva det kostet å anskaffe applikasjonen."
+              - key: agreement_signed_date
+                label: "Dato for avtaleinngåelse"
+                type: date
+                required: false
+                control: input_text
+                placeholder: "Fyll inn dato for avtalen i format (dd.mm.yyyy)"
+                help_text_mode: raw
+                help_text: "Når ble avtalen inngått"
+              - key: agreement_description
+                label: "Beskrivelse av avtalen"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Beskrivelse av avtalen"
+                help_text_mode: raw
+                help_text: "Beskrivelse av avtalen i fritekst."
+              - key: termination_conditions
+                label: "Oppsigelsesbetingelser"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Beskrivelse av oppsigelsebetingelser"
+                help_text_mode: raw
+                help_text: "Beskrivelse av hvilke betingelser som gjelder for oppsigelse av avtalen."
+              - key: agreement_owner_role
+                label: "Avtaleansvarlig (rolle)"
+                type: text
+                required: false
+                control: input_text
+                placeholder: "Velg rolle"
+                help_text_mode: raw
+                help_text: "Avtaleansvarlig er den som forvalter avtalen."
+              - key: agreement_link
+                label: "Lenke til avtale"
+                type: text
+                required: false
+                control: input_text
+                placeholder: "Lenke for avtale (www)"
+                help_text_mode: raw
+                help_text: "Lenke til avtalen."
+
+      - key: operations
+        label: "Drift"
+        sections:
+          - key: operations_overview
+            label: "Drift"
+            fields:
+              - key: technical_operations_supplier
+                label: "Teknisk driftsleverandør"
+                type: text
+                required: false
+                control: input_text
+                placeholder: "Teknisk driftsleverandør"
+                help_text_mode: raw
+                help_text: "Virksomheten som har ansvar for daglig drift og support."
+              - key: supplier_organization_number
+                label: "Organisasjonsnummer til leverandør"
+                type: text
+                required: false
+                control: input_text
+                placeholder: "Organisasjonsnummer"
+                help_text: null
+                help_text_status: no_visible_help_text_in_supplied_html
+              - key: supplier_contact_info
+                label: "Kontaktinfo til leverandør"
+                type: text
+                required: false
+                control: input_text
+                placeholder: "Kontaktinfo"
+                help_text: null
+                help_text_status: no_visible_help_text_in_supplied_html
+              - key: hosting_type
+                label: "Driftsplassering"
+                type: enum
+                required: false
+                control: select
+                placeholder: "Velg driftsplassering"
+                help_text_mode: raw
+                help_text: "Driftsplassering. Hvor kjører applikasjonen?"
+                options:
+                  - value: Cloud
+                    label: "Sky"
+                  - value: LocalServer
+                    label: "Lokal server"
+                  - value: ExternalServer
+                    label: "Ekstern server"
+                  - value: PrivateCloud
+                    label: "Privat sky"
+                  - value: CloudAndLocal
+                    label: "Sky/lokalt"
+              - key: user_count
+                label: "Antall brukere"
+                type: number
+                required: true
+                control: input_text
+                placeholder: "Antall brukere"
+                help_text_mode: raw
+                help_text: "Antall brukere av applikasjonen."
+              - key: lifecycle_status
+                label: "Status"
+                type: enum
+                required: false
+                control: select
+                placeholder: "Velg status"
+                help_text_mode: raw
+                help_text: "Her kan du angi status på applikasjonen - er den for eksempel i bruk eller avviklet?"
+                options:
+                  - value: "Under utvikling"
+                    label: "Under utvikling"
+                  - value: "I drift"
+                    label: "I drift"
+                  - value: "Under avvikling"
+                    label: "Under avvikling"
+                  - value: "Avviklet"
+                    label: "Avviklet"
+              - key: other_operations_notes
+                label: "Annet"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Annet om drift"
+                help_text: null
+                help_text_status: no_visible_help_text_in_supplied_html
+          - key: application_experts
+            label: "Applikasjonseksperter"
+            help_text: null
+            help_text_status: help_icon_present_but_text_not_visible
+            collections:
+              - key: application_experts
+                label: "Applikasjonseksperter"
+                item_type: contact
+                add_button_label: "Ny applikasjonsekspert"
+                columns:
+                  - "Navn"
+                  - "E-post"
+          - key: labels
+            label: "Merkelapper"
+            help_text: null
+            help_text_status: help_icon_present_but_text_not_visible
+            collections:
+              - key: labels
+                label: "Merkelapper"
+                item_type: label
+                add_button_label: "Legg til merkelapp"
+                columns: []
+                empty_state: "Ingen merkelapper tilgjengelig. De kan opprettes under Min organisasjon."
+
+  dataset:
+    entity: Dataset
+    source:
+      route_pattern: "/digiorden/datasets/{id}"
+      example_title: "Barnevern Datasett"
+      example_subtitle: "Datasett"
+      source_status: complete_for_visible_sections
+    tabs:
+      - key: description
+        label: "Beskrivelse"
+        sections:
+          - key: general_information
+            label: "Grunninformasjon"
+            fields:
+              - key: name
+                label: "Navn"
+                type: text
+                required: true
+                control: input_text
+                placeholder: "Navn"
+                help_text_mode: raw
+                help_text: "Hva datasettet skal hete."
+              - key: description
+                label: "Beskrivelse"
+                type: text
+                required: false
+                control: input_text
+                placeholder: "Beskrivelse"
+                help_text_mode: raw
+                help_text: "Hva datasettet inneholder. Dette kan være både generell og spesiell informasjon i fritekst."
+              - key: purpose
+                label: "Formål"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Formål"
+                help_text_mode: raw
+                help_text: "Formålet med datasettet i fritekst."
+          - key: data_characteristics
+            label: "Datakarakteristikk"
+            fields:
+              - key: has_master_data
+                label: "Inneholder masterdata"
+                type: boolean
+                required: false
+                control: radio
+                options:
+                  - value: true
+                    label: "Ja"
+                  - value: false
+                    label: "Nei"
+                help_text_mode: raw
+                help_text: "Masterdata er i løsningen definert som hoveddata som originalt er opprettet i èn applikasjon."
+              - key: has_personal_data
+                label: "Inneholder personopplysninger"
+                type: boolean
+                required: false
+                control: radio
+                options:
+                  - value: true
+                    label: "Ja"
+                  - value: false
+                    label: "Nei"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Personopplysninger er alle opplysninger og vurderinger som kan knyttes til deg som enkeltperson.
+
+                  Typiske personopplysninger er navn, adresse, telefonnummer, e-post og fødselsnummer. Et bilde regnes som en personopplysning dersom personer kan gjenkjennes, og lydopptak kan være personopplysninger selv om ingen navn blir nevnt. Biometri som fingeravtrykk, irismønster og hodeform for ansiktsgjenkjenning er også personopplysninger.
+
+                  En dynamisk IP-adresse er også definert som personopplysning. Registreringsnummer på bil kan være personopplysning hvis det kan knyttes til en bestemt person. Opplysninger om atferdsmønstre, som hva du handler, hvilke butikker du går i, hvilke tv-serier du ser på, hvor du beveger deg og hva du søker etter på nettet, er også personopplysninger.
+              - key: has_sensitive_personal_data
+                label: "Inneholder sensitive personopplysninger"
+                type: boolean
+                required: false
+                control: radio
+                options:
+                  - value: true
+                    label: "Ja"
+                  - value: false
+                    label: "Nei"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Sensitive personopplysninger, kalt særlige kategorier i loven, er opplysninger som krever særskilt behandlingsgrunnlag.
+
+                  Kategoriene som listes i skjemaet er:
+                  - opplysninger om rasemessig eller etnisk opprinnelse
+                  - opplysninger om politisk oppfatning
+                  - opplysninger om religion
+                  - opplysninger om filosofisk overbevisning
+                  - opplysninger om fagforeningsmedlemskap
+                  - genetiske opplysninger
+                  - biometriske opplysninger med formål å entydig identifisere noen
+                  - helseopplysninger
+                  - opplysninger om seksuelle forhold
+                  - opplysninger om seksuell legning
+                  - opplysninger om straffedommer
+                  - opplysninger om lovovertredelser
+          - key: hosting
+            label: "Driftsplassering"
+            fields:
+              - key: hosting_type
+                label: "Driftsplassering"
+                type: enum
+                required: false
+                control: select
+                placeholder: "Driftsplassering"
+                help_text_mode: raw
+                help_text: "Hvor er datasettet lokalisert? Eksempler: i skyen eller på lokal tjener."
+                options:
+                  - value: Cloud
+                    label: "Sky"
+                  - value: LocalServer
+                    label: "Lokal server"
+                  - value: ExternalServer
+                    label: "Ekstern server"
+                  - value: PrivateCloud
+                    label: "Privat sky"
+                  - value: CloudAndLocal
+                    label: "Sky/lokalt"
+          - key: information_elements
+            label: "Informasjonselementer"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            collections:
+              - key: information_elements
+                label: "Informasjonselementer"
+                item_type: information_element
+                add_button_label: "Legg til infomasjonselement"
+                columns:
+                  - "Navn"
+                  - "Beskrivelse"
+                  - "Person-opplysninger"
+                  - "Sensitive personopplysninger"
+          - key: links
+            label: "Relevante lenker"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            collections:
+              - key: links
+                label: "Relevante lenker"
+                item_type: link
+                add_button_label: "Legg til lenke"
+                columns:
+                  - "Lenke"
+                  - "Url"
+                  - "Beskrivelse"
+
+      - key: relations
+        label: "Relasjoner"
+        sections:
+          - key: applications
+            label: "Applikasjoner"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            collections:
+              - key: application_relations
+                label: "Applikasjoner"
+                item_type: relation
+                add_button_label: "Legg til applikasjon"
+                columns:
+                  - "Navn"
+                  - "Versjon"
+                  - "Rolle"
+          - key: related_datasets
+            label: "Relaterte datasett"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            collections:
+              - key: related_datasets
+                label: "Relaterte datasett"
+                item_type: relation
+                add_button_label: "Legg til relatert datasett"
+                columns:
+                  - "Navn"
+                  - "Relasjon"
+          - key: related_processing_activities
+            label: "Relaterte behandlinger"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            collections:
+              - key: related_processing_activities
+                label: "Relaterte behandlinger"
+                item_type: relation
+                add_button_label: "Legg til relatert behandling"
+                columns:
+                  - "Navn"
+                  - "Formål"
+
+  nis2:
+    entity: ComplianceFramework
+    source:
+      route_context: "Etterlevelse"
+      example_title: "NIS2"
+      source_status: editorial_seeded_from_user_material
+    tabs:
+      - key: overview
+        label: "Oversikt"
+        sections:
+          - key: overview
+            label: "NIS2-oversikt"
+            notes:
+              - "Kort oppsummering av status, krav og kommunal relevans før kontrollpunktene vurderes."
+            fields:
+              - key: legal_status_in_norway
+                label: "Status i Norge"
+                type: textarea
+                control: textarea
+                placeholder: "Kort status for norsk rett og kommunal anvendelse"
+                help_text: "Beskriv hvordan digitalsikkerhetsloven, digitalsikkerhetsforskriften og NIS2-forberedelser treffer kommunen."
+              - key: governance_and_reporting_requirements
+                label: "Styrings- og rapporteringskrav"
+                type: textarea
+                control: textarea
+                placeholder: "Kort oppsummering av ledelseskrav og rapporteringsfrister"
+                help_text: "Oppsummer krav til ledelsesforankring, minimumstiltak og hendelsesrapportering."
+              - key: municipal_relevance
+                label: "Kommunal relevans"
+                type: textarea
+                control: textarea
+                placeholder: "Hvorfor NIS2 er relevant for kommunen"
+                help_text: "Beskriv hvilke tjenester, sektorer og digitale avhengigheter som gjør NIS2 relevant i kommunen."
+              - key: implementation_recommendations
+                label: "Anbefalt gjennomføring"
+                type: textarea
+                control: textarea
+                placeholder: "Anbefalt styrings- og gjennomforingslop"
+                help_text: "Bruk feltet til å beskrive ønsket gjennomføringsrekkefølge, workshops, rapportering og forbedringssløyfer."
+              - key: recommended_answer_scale
+                label: "Anbefalt svarskala"
+                type: textarea
+                control: textarea
+                placeholder: "Foreslått skala for utfylling"
+                help_text: "Angi hvordan kontrollpunktene skal vurderes og dokumenteres i kommunen."
+
+      - key: scope_and_governance
+        label: "Scope og styring"
+        sections:
+          - key: scope_and_governance
+            label: "Scope og styring"
+            notes:
+              - "Kartlegging, ledelsesforankring og internkontroll for kommunens NIS2-arbeid."
+            collections:
+              - key: scope_and_governance
+                label: "Kontrollpunkter"
+                item_type: nis2_checklist
+                add_button_label: "Nytt kontrollpunkt"
+                empty_state: "Ingen kontrollpunkter registrert."
+                columns:
+                  - "ID"
+                  - "Spørsmål"
+                  - "Beskrivelse"
+                  - "Felttype"
+                  - "Svaralternativer"
+                  - "Prioritet"
+                  - "Ansvarlig rolle"
+                  - "Referanse"
+                  - "Status"
+                  - "Kommentar"
+
+      - key: risk_and_assets_access
+        label: "Risiko, inventar og tilgang"
+        sections:
+          - key: risk_and_assets_access
+            label: "Risiko, inventar og tilgang"
+            notes:
+              - "Risikostyring, inventar, avhengigheter og identitets- og tilgangskontroller."
+            collections:
+              - key: risk_and_assets_access
+                label: "Kontrollpunkter"
+                item_type: nis2_checklist
+                add_button_label: "Nytt kontrollpunkt"
+                empty_state: "Ingen kontrollpunkter registrert."
+                columns:
+                  - "ID"
+                  - "Spørsmål"
+                  - "Beskrivelse"
+                  - "Felttype"
+                  - "Svaralternativer"
+                  - "Prioritet"
+                  - "Ansvarlig rolle"
+                  - "Referanse"
+                  - "Status"
+                  - "Kommentar"
+
+      - key: protection
+        label: "Beskyttelse"
+        sections:
+          - key: protection
+            label: "Beskyttelse"
+            notes:
+              - "Tekniske og organisatoriske beskyttelsestiltak som segmentering, patching, harding og kryptering."
+            collections:
+              - key: protection
+                label: "Kontrollpunkter"
+                item_type: nis2_checklist
+                add_button_label: "Nytt kontrollpunkt"
+                empty_state: "Ingen kontrollpunkter registrert."
+                columns:
+                  - "ID"
+                  - "Spørsmål"
+                  - "Beskrivelse"
+                  - "Felttype"
+                  - "Svaralternativer"
+                  - "Prioritet"
+                  - "Ansvarlig rolle"
+                  - "Referanse"
+                  - "Status"
+                  - "Kommentar"
+
+      - key: detection_and_response
+        label: "Oppdagelse og respons"
+        sections:
+          - key: detection_and_response
+            label: "Oppdagelse og respons"
+            notes:
+              - "Logging, overvåkning, eskalering og hendelseshåndtering med tilhørende rapporteringsfrister."
+            collections:
+              - key: detection_and_response
+                label: "Kontrollpunkter"
+                item_type: nis2_checklist
+                add_button_label: "Nytt kontrollpunkt"
+                empty_state: "Ingen kontrollpunkter registrert."
+                columns:
+                  - "ID"
+                  - "Spørsmål"
+                  - "Beskrivelse"
+                  - "Felttype"
+                  - "Svaralternativer"
+                  - "Prioritet"
+                  - "Ansvarlig rolle"
+                  - "Referanse"
+                  - "Status"
+                  - "Kommentar"
+
+      - key: continuity_and_suppliers
+        label: "Kontinuitet og leverandører"
+        sections:
+          - key: continuity_and_suppliers
+            label: "Kontinuitet og leverandører"
+            notes:
+              - "Kontinuitetsstyring, backup og restore, kriseledelse og oppfølging av leverandørkjeden."
+            collections:
+              - key: continuity_and_suppliers
+                label: "Kontrollpunkter"
+                item_type: nis2_checklist
+                add_button_label: "Nytt kontrollpunkt"
+                empty_state: "Ingen kontrollpunkter registrert."
+                columns:
+                  - "ID"
+                  - "Spørsmål"
+                  - "Beskrivelse"
+                  - "Felttype"
+                  - "Svaralternativer"
+                  - "Prioritet"
+                  - "Ansvarlig rolle"
+                  - "Referanse"
+                  - "Status"
+                  - "Kommentar"
+
+      - key: training_documentation_improvement
+        label: "Kompetanse og forbedring"
+        sections:
+          - key: training_documentation_improvement
+            label: "Kompetanse, dokumentasjon og forbedring"
+            notes:
+              - "Opplæring, dokumentasjon, revisjon, testing og korrigerende tiltak."
+            collections:
+              - key: training_documentation_improvement
+                label: "Kontrollpunkter"
+                item_type: nis2_checklist
+                add_button_label: "Nytt kontrollpunkt"
+                empty_state: "Ingen kontrollpunkter registrert."
+                columns:
+                  - "ID"
+                  - "Spørsmål"
+                  - "Beskrivelse"
+                  - "Felttype"
+                  - "Svaralternativer"
+                  - "Prioritet"
+                  - "Ansvarlig rolle"
+                  - "Referanse"
+                  - "Status"
+                  - "Kommentar"
+
+  grunnprinsipper_ikt_sikkerhet:
+    entity: ComplianceFramework
+    source:
+      route_context: "Etterlevelse"
+      example_title: "Grunnprinsipper for IKT-sikkerhet"
+      source_status: editorial_seeded_from_local_excel
+    tabs:
+      - key: overview
+        label: "Oversikt"
+        sections:
+          - key: overview
+            label: "Rammeverk og bruk"
+            notes:
+              - "NSMs grunnprinsipper er lagt opp som et praktisk forbedringsprogram med lokal vurdering og oppfølging per tiltak."
+            fields:
+              - key: framework_summary
+                label: "Om rammeverket"
+                type: textarea
+                control: textarea
+                placeholder: "Kort oppsummering av grunnprinsippene og hvordan de brukes"
+                help_text: "Beskriv hva grunnprinsippene er, hva de dekker og hvordan de kan brukes i kommunens sikkerhetsarbeid."
+              - key: category_structure
+                label: "Kategori- og fanestruktur"
+                type: textarea
+                control: textarea
+                placeholder: "Forklar hvordan tiltakene er gruppert"
+                help_text: "Forklar hvordan tiltakene er delt inn i hovedkategorier og grunnprinsipper på denne siden."
+              - key: priority_groups
+                label: "Prioriteringsnivåer"
+                type: textarea
+                control: textarea
+                placeholder: "Beskriv hvordan prioritet 1, 2 og 3 bør tolkes"
+                help_text: "Bruk feltet til å forklare hva prioritet betyr og hvordan kommunen bør bruke prioriteringen i praksis."
+              - key: iso_mapping
+                label: "Kobling mot ISO 27002"
+                type: textarea
+                control: textarea
+                placeholder: "Beskriv hvordan ISO-koblingene kan brukes"
+                help_text: "Forklar hvordan ISO 27002-referansene i tiltakene kan brukes som støtte i modenhetsarbeid og dokumentasjon."
+              - key: recommended_usage
+                label: "Anbefalt bruk i kommunen"
+                type: textarea
+                control: textarea
+                placeholder: "Foreslå hvordan tiltakene kan følges opp lokalt"
+                help_text: "Beskriv anbefalt arbeidsform, ledelsesrapportering og lokal oppfølging av tiltakene."
+
+      - key: identify_and_map
+        label: "Identifisere og kartlegge"
+        sections:
+          - key: gp_1_1
+            label: "1.1 Kartlegg styringsstrukturer, leveranser og understøttende systemer"
+            notes:
+              - "Kartlegging av mål, styring, risikoaksept, leveranser, avhengigheter og dataflyt."
+            collections:
+              - key: gp_1_1
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: &grunnprinsipp_checklist_columns
+                  - "Nr."
+                  - "Kategori"
+                  - "GP-ID"
+                  - "Grunnprinsipp"
+                  - "Spesifisering"
+                  - "Tiltak ID"
+                  - "Tiltaksoverskrift"
+                  - "Tiltaksbeskrivelse"
+                  - "Prioritet"
+                  - "ISO 27002"
+                  - "Status"
+                  - "Kommentar"
+          - key: gp_1_2
+            label: "1.2 Kartlegg enheter og programvare"
+            notes:
+              - "Oversikt over godkjente enheter, programvare og faktiske installasjoner i bruk."
+            collections:
+              - key: gp_1_2
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_1_3
+            label: "1.3 Kartlegg brukere og behov for tilgang"
+            notes:
+              - "Kartlegging av brukere, roller, tilgangsbehov og ansvar knyttet til IKT-sikkerhet."
+            collections:
+              - key: gp_1_3
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+
+      - key: protect_and_maintain
+        label: "Beskytte og opprettholde"
+        sections:
+          - key: gp_2_1
+            label: "2.1 Ivareta sikkerhet i anskaffelses- og utviklingsprosesser"
+            notes:
+              - "Sikkerhet i anskaffelser, tjenesteutsetting, egenutvikling, test og vedlikehold."
+            collections:
+              - key: gp_2_1
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_2_2
+            label: "2.2 Etabler en sikker IKT-arkitektur"
+            notes:
+              - "Helhetlig arkitektur, soneinndeling, redundans og sikker plassering av tjenester og data."
+            collections:
+              - key: gp_2_2
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_2_3
+            label: "2.3 Ivareta en sikker konfigurasjon"
+            notes:
+              - "Standardisering, harding, minimering av funksjonalitet og sikker grunnkonfigurasjon."
+            collections:
+              - key: gp_2_3
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_2_4
+            label: "2.4 Beskytt virksomhetens nettverk"
+            notes:
+              - "Segmentering, trafikkstyring, nettverksbarrierer og beskyttelse av grensesnitt."
+            collections:
+              - key: gp_2_4
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_2_5
+            label: "2.5 Kontroller dataflyt"
+            notes:
+              - "Tillatt dataflyt, kontrollmekanismer og beskyttelse mot uønsket overføring av data."
+            collections:
+              - key: gp_2_5
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_2_6
+            label: "2.6 Ha kontroll på identiteter og tilganger"
+            notes:
+              - "Identitetsforvaltning, privilegerte tilganger, autentisering og kontroll med brukerkontoer."
+            collections:
+              - key: gp_2_6
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_2_7
+            label: "2.7 Beskytt data i ro og i transitt"
+            notes:
+              - "Kryptering, nøkkelhåndtering og beskyttelse av data under lagring og overføring."
+            collections:
+              - key: gp_2_7
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_2_8
+            label: "2.8 Beskytt e-post og nettleser"
+            notes:
+              - "Tiltak mot phishing, skadevare, uønskede vedlegg og usikre nettlesermønstre."
+            collections:
+              - key: gp_2_8
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_2_9
+            label: "2.9 Etabler evne til gjenoppretting av data"
+            notes:
+              - "Backup, restore, test av gjenoppretting og robusthet ved bortfall eller angrep."
+            collections:
+              - key: gp_2_9
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_2_10
+            label: "2.10 Integrer sikkerhet i prosess for endringshåndtering"
+            notes:
+              - "Sikkerhetsvurdering av endringer, kontroll på produksjonssetting og oppfølging av konsekvenser."
+            collections:
+              - key: gp_2_10
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+
+      - key: detect
+        label: "Oppdage"
+        sections:
+          - key: gp_3_1
+            label: "3.1 Oppdag og fjern kjente sårbarheter og trusler"
+            notes:
+              - "Sårbarhetskartlegging, trusseloppdatering og verktøy for å håndtere kjente trusler."
+            collections:
+              - key: gp_3_1
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_3_2
+            label: "3.2 Etabler sikkerhetsovervåkning"
+            notes:
+              - "Strategi, logging, datainnsamling, integritet og drift av sikkerhetsovervåkning."
+            collections:
+              - key: gp_3_2
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_3_3
+            label: "3.3 Analyser data fra sikkerhetsovervåkning"
+            notes:
+              - "Analyse av sikkerhetsrelevante data, normaltilstand, eskalering og trusselinformasjon."
+            collections:
+              - key: gp_3_3
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_3_4
+            label: "3.4 Gjennomfør inntrengningstester"
+            notes:
+              - "Planlegging, gjennomføring og rapportering av inntrengingstester og beredskapsøvelser."
+            collections:
+              - key: gp_3_4
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+
+      - key: handle_and_recover
+        label: "Håndtere og gjenopprette"
+        sections:
+          - key: gp_4_1
+            label: "4.1 Forbered virksomheten på håndtering av hendelser"
+            notes:
+              - "Planverk, BIA, roller, kommunikasjonslinjer og øving av beredskap."
+            collections:
+              - key: gp_4_1
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_4_2
+            label: "4.2 Vurder og klassifiser hendelser"
+            notes:
+              - "Beslutningsgrunnlag, alvorlighetsgrad, klassifisering og varsling til relevante parter."
+            collections:
+              - key: gp_4_2
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_4_3
+            label: "4.3 Kontroller og håndter hendelser"
+            notes:
+              - "Innkapsling, gjenoppretting, koordinering, logging og oppfølging under hendelser."
+            collections:
+              - key: gp_4_3
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+          - key: gp_4_4
+            label: "4.4 Evaluer og lær av hendelser"
+            notes:
+              - "Lessons learned, forbedring av tiltak og deling av erfaringer etter hendelser."
+            collections:
+              - key: gp_4_4
+                label: "Tiltak"
+                item_type: grunnprinsipp_checklist
+                add_button_label: "Nytt tiltak"
+                empty_state: "Ingen tiltak registrert."
+                columns: *grunnprinsipp_checklist_columns
+
+  controller_protocol:
+    entity: ProcessingActivity
+    profile: controller
+    source:
+      route_context: "Behandlingsansvarlig protokoll"
+      example_title: "Ny behandling (02-06-2023)"
+      source_status: complete_for_visible_sections
+    tabs:
+      - key: registration
+        label: "Registrering"
+        sections:
+          - key: general_information
+            label: "Grunninformasjon"
+            fields:
+              - key: name
+                label: "Navn"
+                type: text
+                required: true
+                control: input_text
+                placeholder: "Navn på behandlingen"
+                help_text: null
+                help_text_status: no_visible_help_text_in_supplied_html
+              - key: processing_description
+                label: "Hva gjelder behandlingen?"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Ny tekst"
+                help_text_mode: raw
+                help_text: "En overordnet beskrivelse av behandlingsaktiviteten."
+          - key: organization_context
+            label: "Organisasjonsforankring"
+            fields:
+              - key: controller
+                label: "Artikkel 30 nr. 1 bokstav a - Behandlingsansvarlig"
+                type: reference
+                required: true
+                control: input_text_disabled
+                option_source: organization_role.controller
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Behandlingsansvarlig er overordnet ansvarlig for å overholde personvernsprinsippene og regelverket for behandlingen av persondata.
+
+                  Kan kun endres av organisasjonsadministrator og blir satt under "Min organisasjon".
+              - key: data_protection_officer
+                label: "Artikkel 30 nr. 1 bokstav a - Personvernombud"
+                type: reference
+                required: true
+                control: input_text_disabled
+                option_source: organization_role.data_protection_officer
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Personvernombudets rolle er å gi råd til virksomheten om hvordan personverninteressene kan best mulig ivaretas, men også å kontrollere etterlevelsen av regelverket.
+
+                  Kan kun endres av organisasjonsadministrator og blir satt under "Min organisasjon".
+              - key: joint_controllers
+                label: "Artikkel 30 nr. 1 bokstav a - Felles behandlingsansvarlige"
+                type: collection_reference
+                required: false
+                control: search_select_repeating
+                option_source: organization_role.joint_controller
+                placeholder: "Velg fra listen"
+                help_text_mode: raw
+                help_text: "Velg andre behandlingsansvarlige som sammen med kommunen fastsetter formålene med og midlene for behandlingen."
+          - key: purpose_and_categories
+            label: "Formål og kategorier"
+            fields:
+              - key: purposes
+                label: "Artikkel 30 nr. 1 bokstav b - Formålet med behandlingen"
+                type: collection_enum_or_text
+                required: true
+                control: search_select_repeating
+                placeholder: "Skriv ny eller velg fra listen"
+                help_text_mode: raw
+                help_text: "Angi ett eller flere konkrete formål med behandlingen. Formålet bør beskrive hvorfor personopplysningene behandles."
+                observed_values:
+                  - "Avregning for barnehageplass"
+                  - "Avregning for pleiehjemsplass"
+                  - "Avregning for SFO"
+                  - "Beregning av lønn og annen kompensasjon til ansatte"
+                  - "Forskningsformål"
+                  - "Kontaktregister; oversikt over foresatte"
+                  - "Oversikt over FAU - medlemmer"
+                  - "Oversikt over frivillige"
+                  - "Statistikkformål"
+                  - "Tildele barnehageplass"
+              - key: data_subject_categories
+                label: "Artikkel 30 nr. 1 bokstav c - Kategoriene av registrerte"
+                type: collection_enum_or_text
+                required: true
+                control: search_select_repeating
+                placeholder: "Skriv ny eller velg fra listen"
+                help_text_mode: raw
+                help_text: "Velg hvilke grupper registrerte behandlingen gjelder, for eksempel ansatte, innbyggere, elever eller foresatte."
+                observed_values:
+                  - "Ansatt"
+                  - "Barn"
+                  - "Barneskoleelev"
+                  - "Fagforeningsmedlem"
+                  - "Foresatte"
+                  - "Hjelpepleier"
+                  - "Hjemmehjelp"
+                  - "Klient - kriminalforsorg"
+                  - "Lege"
+                  - "Legesekretær"
+                  - "Låntaker - sosiallån"
+                  - "Låntaker - startlån"
+                  - "Pasient"
+                  - "Sykepleier"
+                  - "Ungdomsskoleelev"
+                  - "Verge"
+              - key: personal_data_categories
+                label: "Artikkel 30 nr. 1 bokstav c - Kategorier av personopplysninger"
+                type: collection_enum_or_text
+                required: true
+                control: search_select_repeating
+                placeholder: "Skriv ny eller velg fra listen"
+                help_text_mode: raw
+                help_text: "Angi hvilke typer personopplysninger som behandles, inkludert særlige kategorier eller opplysninger om straffbare forhold der det er relevant."
+                observed_values:
+                  - "Bilde av person"
+                  - "Etnisk opprinnelse"
+                  - "Fagforeningsmedlemskap"
+                  - "Fingeravtrykk"
+                  - "Hodeform"
+                  - "IMEI-nummer"
+                  - "IP-adresse"
+                  - "Irismønster"
+                  - "Kjøretøy-registreringsnummer"
+                  - "Kontaktopplysninger"
+                  - "Lydopptak"
+                  - "MAC-adresse"
+                  - "Navn"
+                  - "Straffbare forhold (artikkel 10)"
+                  - "Videoopptak av person"
+              - key: recipient_categories
+                label: "Artikkel 30 nr. 1 bokstav d - Kategorier av mottakere"
+                type: collection_enum_or_text
+                required: true
+                control: search_select_repeating
+                placeholder: "Skriv ny eller velg fra listen"
+                help_text_mode: raw
+                help_text: "Angi hvilke kategorier mottakere som kan få tilgang til eller motta personopplysningene som del av behandlingen."
+                observed_values:
+                  - "Advokat"
+                  - "FAU-medlemmer"
+                  - "Foresatte"
+                  - "Kontaktlærer"
+                  - "Lege"
+                  - "Logoped"
+                  - "Pårørende"
+                  - "Regnskapsavdeling"
+                  - "Revisor"
+                  - "Saksbehandler - Låneadministrasjon"
+                  - "Saksbehandler - NAV"
+                  - "Saksbehandler - PPT"
+                  - "Saksbehandler - Utdanning"
+                  - "Sekretariat"
+                  - "Skolehelsetjeneste"
+                  - "Spesialisthelsetjeneste - Ergoterapi"
+                  - "Spesialisthelsetjeneste - Fysioterapi"
+                  - "Verge"
+          - key: transfer_and_guarantees
+            label: "Overføring og garantier"
+            fields:
+              - key: third_country_or_international_organization
+                label: "Artikkel 30 nr. 1 bokstav e - Identifikasjon av tredjestat eller internasjonal organisasjon"
+                type: text
+                required: true
+                control: input_text
+                placeholder: "Ny tekst"
+                help_text_mode: raw
+                help_text: "Land og/eller internasjonal organisasjon som behandler opplysningene (dersom relevant)."
+              - key: guarantees_or_agreement
+                label: "Artikkel 30 nr. 1 bokstav e - Dokumentasjon på nødvendige garantier eller virksomhetsavtale"
+                type: collection_text_or_search
+                required: true
+                control: search_select_repeating
+                placeholder: "Skriv ny eller velg fra listen"
+                help_text_mode: raw
+                help_text: "Dokumenter hvilke garantier, avtaler eller mekanismer som benyttes dersom opplysninger overføres til tredjestat eller internasjonal organisasjon."
+          - key: retention_and_security
+            label: "Oppbevaring og sikkerhet"
+            fields:
+              - key: deletion_of_personal_data
+                label: "Artikkel 30 nr. 1 bokstav f - Sletting av personopplysninger"
+                type: text
+                required: true
+                control: input_text
+                placeholder: "Ny tekst"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  For hver behandling skal det angis når opplysningene slettes.
+
+                  Dette punktet er knyttet til prinsippet om dataminimering og den registrertes rett til sletting, "rett til å bli glemt". Dersom data ikke kan slettes fysisk, kan tiltak som dataminimering og endret tilgang gjennom livsløpet være aktuelt.
+              - key: security_measures
+                label: "Artikkel 30 nr. 1 bokstav g - Generell beskrivelse av tekniske og organisatoriske sikkerhetstiltak"
+                type: textarea
+                required: true
+                control: textarea
+                placeholder: "Ny tekst"
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  For hver behandling bør det dokumenteres hvordan opplysningene beskyttes mot uberettiget innsyn eller endring/sletting, for eksempel tilgangskontroll og kryptering.
+
+                  Det bør også dokumenteres hvordan nødvendig tilgjengelighet sikres, for eksempel backup, logging, driftsstabilitet og rutiner for driftskontinuitet, samt prosedyre for regelmessig evaluering av sikkerhetstiltakenes tilstrekkelighet.
+          - key: legal_basis
+            label: "Behandlingsgrunnlag"
+            fields:
+              - key: article_6_legal_basis
+                label: "Artikkel 6 - Behandlingsgrunnlag"
+                type: collection_enum
+                required: true
+                control: search_select_repeating
+                placeholder: "Velg fra listen"
+                help_text_mode: raw
+                help_text: "Velg ett eller flere behandlingsgrunnlag etter artikkel 6 som hjemler behandlingen."
+                observed_values:
+                  - "6.1.a Samtykke"
+                  - "6.1.b Nødvendig for å oppfylle en avtale"
+                  - "6.1.c Nødvendig for å oppfylle en rettslig plikt"
+                  - "6.1.d Nødvendig for å beskytte vitale interesser"
+                  - "6.1.e Nødvendig for å utføre en oppgave i offentlig interesse eller utøve offentlig myndighet"
+                  - "6.1.f Nødvendig for å ivareta legitime interesser - interesseavveiing"
+              - key: article_6_reason
+                label: "Begrunnelse artikkel 6"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Ny tekst"
+                help_text_mode: raw
+                help_text: "Et valgfritt felt for utdyping, avveining eller begrunnelse for behandlingsgrunnlag artikkel 6."
+              - key: article_9_10_legal_basis
+                label: "Artikkel 9 / 10 - Behandlingsgrunnlag av særlige kategorier av personopplysninger"
+                type: collection_enum
+                required: true
+                control: search_select_repeating
+                placeholder: "Velg fra listen"
+                help_text_mode: raw
+                help_text: "Velg grunnlag etter artikkel 9 eller 10 dersom behandlingen omfatter særlige kategorier av personopplysninger eller opplysninger om straffedommer og lovovertredelser."
+                observed_values:
+                  - "Ikke relevant"
+                  - "9.2.a Samtykke"
+                  - "9.2.b Tillatt etter lov eller tariffavtale"
+                  - "9.2.c Verne rettigheter når den registrerte ikke kan samtykke"
+                  - "9.2.d Medlemsregister, samtykket bruk"
+                  - "9.2.e Opplysninger den registrerte har offenliggjort"
+                  - "9.2.f Rettskrav eller innenfor domstols myndighet"
+                  - "9.2.g Har hjemmel i lov og hensyn til viktig allmenn interesse"
+                  - "9.2.h Medisinske hensyn"
+                  - "9.2.i Allmenne folkehelsehensyn"
+                  - "9.2.j Arkivformål i allmenn interesse"
+                  - "pol § 11: Straffedom og lovovertredelse under off.myndighetskontroll"
+                  - "pol § 6: arb.rettslige plikter og rettigheter (arb.forhold)"
+                  - "pol § 7: Eksplisitt tillatt av Datatilsynet"
+                  - "pol § 9: Uten samtykke; arkiv -, vitenskapelig / historisk eller statistisk formål"
+              - key: article_9_10_reason
+                label: "Begrunnelse artikkel 9 / 10"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Ny tekst"
+                help_text_mode: raw
+                help_text: "Et valgfritt felt for utdyping, avveining eller begrunnelse for behandlingsgrunnlag artikkel 9 / 10."
+              - key: legal_obligation
+                label: "Rettslig forpliktelse"
+                type: text
+                required: false
+                control: input_text
+                placeholder: "Ny tekst"
+                help_text_mode: raw
+                help_text: "Oppgi lov, forskrift eller annet rettslig grunnlag dersom behandlingen bygger på en rettslig forpliktelse."
+          - key: risk_sources_processors
+            label: "Risiko, kilde og databehandlere"
+            fields:
+              - key: high_privacy_risk
+                label: "Kan behandlingen innebære høy personvernrisiko"
+                type: boolean
+                required: false
+                control: radio
+                options:
+                  - value: true
+                    label: "Ja"
+                  - value: false
+                    label: "Nei"
+                help_text_mode: raw
+                help_text: "For hver behandling bør det vurderes hvilken risiko det utgjør for den registrerte om data kommer på avveie."
+              - key: personal_data_source
+                label: "Kilde til personopplysninger"
+                type: collection_enum_or_text
+                required: false
+                control: search_select_repeating
+                placeholder: "Skriv ny eller velg fra listen"
+                help_text_mode: raw
+                help_text: "Angi hvor personopplysningene hentes fra, for eksempel fra den registrerte selv, foresatte, arbeidsgiver eller offentlige registre."
+                observed_values:
+                  - "Annen 3. part"
+                  - "Arbeidsgiver"
+                  - "Den registrerte"
+                  - "Foresatte"
+                  - "Offentlig dataregister"
+                  - "Pårørende"
+              - key: data_processors
+                label: "Databehandlere"
+                type: collection_text_or_search
+                required: false
+                control: search_select_repeating
+                placeholder: "Skriv ny eller velg fra listen"
+                help_text_mode: raw
+                help_text: "Oppgi eksterne databehandlere eller leverandører som behandler personopplysninger på vegne av behandlingsansvarlig."
+              - key: data_processor_agreements
+                label: "Databehandleravtale"
+                type: collection_table
+                required: false
+                control: table
+                help_text_mode: raw
+                help_text: "Registrer inngåtte databehandleravtaler, status og signeringsdato for leverandørene som er knyttet til behandlingen."
+              - key: internal_responsible
+                label: "Internt ansvarlig"
+                type: reference
+                required: false
+                control: select
+                placeholder: "velg fra listen"
+                option_source: organization_users
+                help_text_mode: raw
+                help_text: "Intern ansvarlig i kommunen for behandlingen."
+              - key: additional_notes
+                label: "Annet om behandlingen"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Ny tekst"
+                help_text_mode: raw
+                help_text: "Et valgfritt felt for utdyping, avveining eller begrunnelse for behandlingen som ikke kommer frem andre plasser."
+
+      - key: datasets
+        label: "Datasett"
+        sections:
+          - key: dataset_relations
+            label: "Datasett"
+            help_text: null
+            help_text_status: no_visible_help_text_in_supplied_html
+            collections:
+              - key: datasets
+                label: "Datasett"
+                item_type: relation
+                add_button_label: "Legg til datasett"
+
+      - key: summary
+        label: "Oppsummering"
+        derived: true
+        sections:
+          - key: print_view
+            label: "Oppsummering / utskrift"
+            notes:
+              - "Viser feltoversikt i nummerert liste."
+              - "Inneholder utskriftsknapp og lenke for personvernerklæring."
+
+  processor_protocol:
+    entity: ProcessingActivity
+    profile: processor
+    source:
+      route_context: "Databehandler protokoll"
+      example_title: "Ny behandling (24-03-2026)"
+      source_status: complete_for_visible_sections
+    tabs:
+      - key: registration
+        label: "Registrering"
+        sections:
+          - key: general_information
+            label: "Grunninformasjon"
+            fields:
+              - key: name
+                label: "Navn"
+                type: text
+                required: true
+                control: input_text
+                help_text_mode: raw
+                help_text: "Et beskrivende navn for behandlingen."
+          - key: role_and_organization_context
+            label: "Rolle- og organisasjonsforankring"
+            fields:
+              - key: processor
+                label: "Artikkel 30 nr. 2 bokstav a - Databehandler"
+                type: reference
+                required: true
+                control: input_text_disabled
+                option_source: organization_role.processor
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Databehandleren behandler alltid personopplysningene etter instruks fra en annen virksomhet.
+
+                  En databehandler har fått delegert en oppgave om å behandle personopplysninger fra en behandlingsansvarlig. Feltet kan kun endres av organisasjonsadministrator og blir satt under "Min organisasjon".
+              - key: controllers
+                label: "Artikkel 30 nr. 2 bokstav a - Behandlingsansvarlig"
+                type: collection_reference
+                required: true
+                control: search_select_repeating
+                option_source: organization_role.processor_protocol_controller
+                placeholder: "Velg fra listen"
+                help_text_mode: raw
+                help_text: "Velg hvilke behandlingsansvarlige databehandleren utfører behandlingen på vegne av. Hvis listen er tom, må disse legges til under Min organisasjon."
+                empty_state: "Ingen tilgjengelig. Legg til under 'min organisasjon'"
+              - key: data_protection_officer
+                label: "Artikkel 30 nr. 2 bokstav a - Personvernombud"
+                type: reference
+                required: true
+                control: input_text_disabled
+                option_source: organization_role.data_protection_officer
+                help_text_mode: normalized_transcription
+                help_text: |-
+                  Personvernombudets rolle er å gi råd til virksomheten om hvordan personverninteressene kan best mulig ivaretas, men også å kontrollere etterlevelsen av regelverket.
+
+                  Kan kun endres av organisasjonsadministrator og blir satt under "Min organisasjon".
+          - key: processing_categories
+            label: "Kategorier av behandling"
+            fields:
+              - key: processing_categories
+                label: "Artikkel 30 nr. 2 bokstav b - Kategorier av behandling"
+                type: collection_enum_or_text
+                required: true
+                control: search_select_repeating
+                placeholder: "Velg fra listen eller skriv ny"
+                help_text_mode: raw
+                help_text: "Angi hvilke behandlingshandlinger databehandleren utfører, som for eksempel lagring, bruk, registrering eller utlevering."
+                observed_values:
+                  - "Begrensning"
+                  - "Bruk"
+                  - "Gjenfinning"
+                  - "Innsamling"
+                  - "Konsultering"
+                  - "Lagring"
+                  - "Organisering"
+                  - "Registrering"
+                  - "Sammenstilling eller samkjøring"
+                  - "Sletting eller tilintetgjøring"
+                  - "Spredning eller alle andre former for tilgjengeliggjøring"
+                  - "Strukturering"
+                  - "Tilpasning eller endring"
+                  - "Utlevering ved overføring"
+          - key: transfer_and_guarantees
+            label: "Tredjestat og garantier"
+            fields:
+              - key: third_country_or_international_organization
+                label: "Artikkel 30 nr. 2 bokstav c - Identifikasjon av tredjestat eller internasjonal organisasjon"
+                type: text
+                required: false
+                control: input_text
+                placeholder: "Ny tekst"
+                help_text_mode: raw
+                help_text: "Dersom relevant skal det oppgis identifikasjon av alle tredjestater eller internasjonale organisasjoner dataene blir overført til."
+              - key: guarantees_or_agreement
+                label: "Artikkel 30 nr. 2 bokstav c - Dokumentasjon på nødvendige garantier eller virksomhetsavtale"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Ny tekst"
+                help_text_mode: raw
+                help_text: "Dokumentasjon på nødvendige garantier for behandling av data av tredjestater eller internasjonale organisasjoner."
+          - key: security_and_internal_follow_up
+            label: "Sikkerhet og intern oppfølging"
+            fields:
+              - key: security_measures
+                label: "Artikkel 30 nr. 2 bokstav d - Generell beskrivelse av tekniske og organisatoriske sikkerhetstiltak"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Ny tekst"
+                help_text_mode: raw
+                help_text: "Dersom mulig skal det beskrives hvilke tiltak det er gjort for å sikre data."
+              - key: internal_responsible
+                label: "Internt ansvarlig"
+                type: reference
+                required: false
+                control: select
+                placeholder: "Velg fra listen"
+                option_source: organization_users
+                help_text_mode: raw
+                help_text: "Internt ansvarlig for behandlingen"
+              - key: additional_notes
+                label: "Annet om behandlingen"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Ny tekst"
+                help_text_mode: raw
+                help_text: "Et valgfritt felt for utdyping, avveining eller begrunnelse for behandlingen som ikke kommer frem andre plasser."
+        actions:
+          - "Slett behandling"
+
+      - key: summary
+        label: "Oppsummering"
+        derived: true
+        sections:
+          - key: print_view
+            label: "Oppsummering / utskrift"
+            notes:
+              - "Viser nummerert oversikt over registrerte felt."
+              - "Inneholder utskriftsknapp."
+
+  roles:
+    entity: Organization
+    source:
+      route_pattern: "/digiorden/organizations/{id}"
+      example_title: "Hammerfest kommune"
+      source_status: partial_help_text_visibility
+    sections:
+      - key: organization_information
+        label: "Organisasjonsinformasjon"
+        notes:
+          - "Grunnopplysninger om virksomheten som brukes i registeret, i dokumentasjon og som referanse på tvers av arbeidet med personvern og informasjonshåndtering."
+        fields:
+          - key: organization_name
+            label: "Organisasjonsnavn"
+            type: text
+            control: input_text
+            placeholder: "Organisasjonsnavn"
+            help_text: null
+            help_text_status: no_help_text_available
+          - key: organization_number
+            label: "Organisasjonsnummer"
+            type: text
+            control: input_text
+            placeholder: "Organisasjonsnummer"
+            help_text: null
+            help_text_status: no_help_text_available
+
+      - key: application_experts
+        label: "Applikasjonseksperter"
+        help_text: null
+        help_text_status: help_icon_present_but_text_not_visible
+        notes:
+          - "Fagpersoner med særlig kjennskap til applikasjoner og behandlingsprosesser. De fungerer som lokale kontaktpunkter når systembruk, databehandling og etterlevelse skal avklares."
+        collections:
+          - key: application_experts
+            label: "Applikasjonseksperter"
+            item_type: contact
+            add_button_label: "Ny applikasjonsekspert"
+            columns:
+              - "Navn"
+              - "E-post"
+
+      - key: system_responsibles
+        label: "Systemansvarlige"
+        help_text: null
+        help_text_status: no_visible_help_text_in_supplied_html
+        notes:
+          - "Oversikt over personer som har operativt ansvar for oppfølging av applikasjoner og annen behandling i den daglige forvaltningen. Disse brukes som valgbare kontaktpersoner der løsningen krever en navngitt systemansvarlig eller intern ansvarlig."
+        collections:
+          - key: system_responsibles
+            label: "Systemansvarlige"
+            item_type: contact
+            add_button_label: "Ny systemansvarlig"
+            columns:
+              - "Navn"
+              - "Epost"
+
+      - key: system_owners
+        label: "Systemeiere"
+        help_text: null
+        help_text_status: no_visible_help_text_in_supplied_html
+        notes:
+          - "Angir hvem som har det overordnede forvaltnings- og styringsansvaret for et system. Systemeier er sentral når ansvar, prioriteringer, risiko og oppfølging av GDPR-krav skal avklares."
+        collections:
+          - key: system_owners
+            label: "Systemeiere"
+            item_type: contact
+            add_button_label: "Ny systemeier"
+            columns:
+              - "Navn"
+              - "Epost"
+
+      - key: controllers
+        label: "Behandlingsansvarlig"
+        help_text: null
+        help_text_status: help_icon_present_but_text_not_visible
+        notes:
+          - "Viser hvem som er behandlingsansvarlig etter GDPR. Dette er den virksomheten eller rollen som bestemmer formålene med behandlingen og hvilke midler som benyttes."
+        collections:
+          - key: controllers
+            label: "Behandlingsansvarlig"
+            item_type: dated_contact
+            columns:
+              - "Navn"
+              - "Epost"
+              - "Fra"
+              - "Til"
+
+      - key: controller_representatives
+        label: "Behandlingsansvarliges representant"
+        help_text: null
+        help_text_status: help_icon_present_but_text_not_visible
+        notes:
+          - "Brukes for å registrere representanter som opptrer på vegne av behandlingsansvarlig. Dette tydeliggjør kontaktpunkt og ansvarslinjer i den praktiske oppfølgingen av personvernarbeidet."
+        collections:
+          - key: controller_representatives
+            label: "Behandlingsansvarliges representant"
+            item_type: contact
+            add_button_label: "Ny behandlingsansvarliges representant"
+            empty_state: "Ingen Behandlingsansvarliges representant opprettet enda..."
+
+      - key: joint_controllers
+        label: "Felles behandlingsansvarlig"
+        help_text: null
+        help_text_status: help_icon_present_but_text_not_visible
+        notes:
+          - "Dokumenterer når behandlingsansvaret deles med andre virksomheter. Seksjonen gjør det enklere å synliggjøre felles ansvar og avklaringer som må være på plass etter GDPR."
+        collections:
+          - key: joint_controllers
+            label: "Felles behandlingsansvarlig"
+            item_type: contact
+            add_button_label: "Ny felles behandlingsansvarlig"
+            empty_state: "Ingen felles behandlingsansvarlig opprettet enda..."
+
+      - key: data_protection_officers
+        label: "Personvernombud"
+        help_text: null
+        help_text_status: help_icon_present_but_text_not_visible
+        notes:
+          - "Oversikt over virksomhetens personvernombud. Ombudet skal gi råd, følge opp etterlevelse og være et uavhengig kontaktpunkt i spørsmål som gjelder behandling av personopplysninger."
+        collections:
+          - key: data_protection_officers
+            label: "Personvernombud"
+            item_type: dated_contact
+            columns:
+              - "Navn"
+              - "Epost"
+              - "Fra"
+              - "Til"
+
+      - key: processor_protocol_controllers
+        label: "Behandlingsansvarlig for databehandlers protokoll"
+        help_text: null
+        help_text_status: help_icon_present_but_text_not_visible
+        notes:
+          - "Knytter databehandlerprotokoller til relevante behandlingsansvarlige. Dette gir sporbarhet mellom virksomhetens rolle som databehandler og de behandlingsaktivitetene som utføres på vegne av andre."
+        collections:
+          - key: processor_protocol_controllers
+            label: "Behandlingsansvarlig for databehandlers protokoll"
+            item_type: contact
+            add_button_label: "Ny behandlingsansvarlig"
+
+      - key: privacy_statement
+        label: "Personvernerklæring"
+        help_text: null
+        help_text_status: help_icon_present_but_text_not_visible
+        notes:
+          - "Samler virksomhetens publiserte personvernerklæringer. Her kan man holde oversikt over hvilke erklæringer som finnes, når de sist ble oppdatert og hvilken type erklæring som gjelder."
+        collections:
+          - key: privacy_statements
+            label: "Personvernerklæring"
+            item_type: file_reference
+            columns:
+              - "Fil"
+              - "Sist oppdatert"
+              - "Type"
+            observed_values:
+              - "Standard erklæring"
+        actions:
+          - "Last opp"

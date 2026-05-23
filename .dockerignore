@@ -1,0 +1,8 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.playwright-cli
+output
+server-test.err
+server-test.log

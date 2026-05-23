@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: systemkontroll
+      DB_USER: systemkontroll
+      DB_PASSWORD: systemkontroll
+    ports:
+      - "3000:3000"
+    volumes:
+      - type: bind
+        source: C:/SystemKontroll/public
+        target: /app/public
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: systemkontroll
+      POSTGRES_USER: systemkontroll
+      POSTGRES_PASSWORD: systemkontroll
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U systemkontroll -d systemkontroll"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

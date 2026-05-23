@@ -1,0 +1,27 @@
+{
+  "name": "systemkontroll-fluent-ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:data": "node scripts/build-data.mjs",
+    "build:frontend": "vite build --config frontend/vite.config.mjs",
+    "build": "npm run build:data && npm run build:frontend",
+    "validate": "node scripts/validate-specs.mjs",
+    "start": "node scripts/dev-server.mjs",
+    "prepare": "npm run build:data"
+  },
+  "dependencies": {
+    "@fluentui/react-components": "^9.72.7",
+    "@fluentui/react-icons": "^2.0.305",
+    "express": "^5.1.0",
+    "pg": "^8.16.3",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.2",
+    "vite": "^7.1.5"
+  }
+}
