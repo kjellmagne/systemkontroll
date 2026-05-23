@@ -363,7 +363,8 @@ body:has(.shell[data-appearance="dark"]) {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(17, 24, 39, 0.36);
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(12px) saturate(0.9);
 }
 
 .settingsWindow {
@@ -374,8 +375,8 @@ body:has(.shell[data-appearance="dark"]) {
   overflow: hidden;
   border: 1px solid var(--surface-border);
   border-radius: 8px;
-  background: var(--surface-page);
-  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+  background: var(--surface-card, #ffffff);
+  box-shadow: 0 28px 90px rgba(15, 23, 42, 0.46);
 }
 
 .settingsWindowChrome {
@@ -392,6 +393,7 @@ body:has(.shell[data-appearance="dark"]) {
   min-height: 0;
   overflow: auto;
   padding: 22px;
+  background: var(--surface-card, #ffffff);
 }
 
 .loadingShell {
