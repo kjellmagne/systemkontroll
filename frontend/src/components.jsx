@@ -2370,11 +2370,13 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   const isUserAdmin = isSessionAdmin || adminAccessStatus === "granted";
   const selectedUser = users.find((user) => user.id === selectedUserId) ?? null;
   const settingsNavItems = [
-    { key: "catalogs", label: "Registere" },
-    { key: "users", label: "Brukeradministrasjon" },
-    { key: "apiKeys", label: "API-nøkler" },
-    { key: "themes", label: "Tema og farger" }
+    { key: "catalogs", label: "Registere", description: "Verdier og merkelapper", icon: TagRegular },
+    { key: "users", label: "Brukere", description: "Tilgang og roller", icon: PeopleRegular },
+    { key: "apiKeys", label: "API-nøkler", description: "Integrasjoner og tokens", icon: ShieldRegular },
+    { key: "themes", label: "Tema", description: "Utseende og farger", icon: SparkleRegular }
   ];
+  const activeSettingsItem = settingsNavItems.find((item) => item.key === activeSettingsTab) ?? settingsNavItems[0];
+  const isAccessControlledSettingsTab = ["users", "apiKeys"].includes(activeSettingsTab);
 
   React.useEffect(() => {
     setAdminAccessStatus(isSessionAdmin ? "granted" : "checking");
@@ -2545,12 +2547,12 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   function renderApiKeysTab() {
     if (!isUserAdmin) {
       return (
-        <Card className="settingsCard settingsCard--fullWidth" appearance="filled-alternative">
+        <div className="settingsEmptyState">
           <div className="headerStack compact">
             <Title3>API-nøkler</Title3>
             <Body1>{adminAccessStatus === "checking" ? "Kontrollerer administratorrettigheter..." : "Du må være administrator for å administrere API-nøkler."}</Body1>
           </div>
-        </Card>
+        </div>
       );
     }
 
@@ -2576,9 +2578,13 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
               Opprett API-nøkkel
             </Button>
             {createdApiToken ? (
-              <Field label="Ny nøkkel">
+              <div className="apiTokenCallout">
+                <div className="headerStack compact">
+                  <Text weight="semibold">Ny nøkkel er opprettet</Text>
+                  <Text size={200}>Kopier den nå. Den vises ikke igjen etter at vinduet lukkes.</Text>
+                </div>
                 <Textarea className="apiTokenText" readOnly value={createdApiToken} />
-              </Field>
+              </div>
             ) : null}
           </div>
         </Card>
@@ -2634,12 +2640,12 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   function renderUsersTab() {
     if (!isUserAdmin) {
       return (
-        <Card className="settingsCard settingsCard--fullWidth" appearance="filled-alternative">
+        <div className="settingsEmptyState">
           <div className="headerStack compact">
             <Title3>Brukere</Title3>
             <Body1>{adminAccessStatus === "checking" ? "Kontrollerer administratorrettigheter..." : "Du må være administrator for å administrere brukere."}</Body1>
           </div>
-        </Card>
+        </div>
       );
     }
 
@@ -3003,8 +3009,19 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   }
 
   return (
-    <div className="pageStack settingsPageStack">
-      <PageHeader screen={currentScreen} onAction={onAction} />
+    <div className="settingsPageStack">
+      <header className="settingsHeader">
+        <div className="headerStack compact">
+          <Text size={200} weight="semibold" className="sectionLabel">
+            Innstillinger
+          </Text>
+          <Title2>{activeSettingsItem.label}</Title2>
+          <Body1>{activeSettingsItem.description}</Body1>
+        </div>
+        <Badge appearance={isAccessControlledSettingsTab && isUserAdmin ? "filled" : "outline"}>
+          {isAccessControlledSettingsTab ? (isUserAdmin ? "Administrator" : adminAccessStatus === "checking" ? "Kontrollerer tilgang" : "Standard tilgang") : "Lokal innstilling"}
+        </Badge>
+      </header>
       <div className="settingsWorkspace">
         <nav className="settingsSideNav" aria-label="Innstillinger">
           {settingsNavItems.map((item) => (
@@ -3014,7 +3031,13 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
               className={`settingsSideNavItem ${activeSettingsTab === item.key ? "isActive" : ""}`}
               onClick={() => setActiveSettingsTab(item.key)}
             >
-              {item.label}
+              <span className="settingsSideNavIcon" aria-hidden="true">
+                <item.icon />
+              </span>
+              <span className="settingsSideNavCopy">
+                <span>{item.label}</span>
+                <small>{item.description}</small>
+              </span>
             </button>
           ))}
         </nav>
