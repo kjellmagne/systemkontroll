@@ -389,7 +389,9 @@ body:has(.shell[data-appearance="dark"]) {
 }
 
 .loginHeader,
-.loginProviderStack {
+.loginProviderStack,
+.loginForm,
+.loginField {
   display: flex;
   flex-direction: column;
 }
@@ -404,6 +406,36 @@ body:has(.shell[data-appearance="dark"]) {
 
 .loginProviderStack {
   gap: 10px;
+}
+
+.loginForm {
+  gap: 12px;
+}
+
+.loginField {
+  gap: 6px;
+  color: #242424;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.loginField input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #d1d1d1;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.loginField input:focus {
+  border-color: #0f6cbd;
+  box-shadow: 0 0 0 1px #0f6cbd;
+  outline: none;
+}
+
+.loginError {
+  color: #b10e1c;
 }
 
 .pageHeaderRow,

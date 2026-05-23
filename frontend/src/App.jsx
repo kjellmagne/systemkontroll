@@ -1082,6 +1082,36 @@ export default function App() {
 
 function LoginPage({ providers }) {
   const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash || "#/applications"}`;
+  const localProvider = providers.find((provider) => provider.type === "local");
+  const externalProviders = providers.filter((provider) => provider.type !== "local");
+  const [identifier, setIdentifier] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error, setError] = React.useState("");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  async function submitLocalLogin(event) {
+    event.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/auth/local", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, password })
+      });
+
+      if (!response.ok) {
+        throw new Error("Feil brukernavn eller passord.");
+      }
+
+      window.location.href = returnTo;
+    } catch (loginError) {
+      setError(loginError.message ?? "Innlogging feilet.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <div className="loginShell">
@@ -1092,12 +1122,44 @@ function LoginPage({ providers }) {
             SystemKontroll
           </Text>
           <Text size={300}>
-            Logg inn med organisasjonens identitetsleverandør.
+            Logg inn med SystemKontroll-konto eller organisasjonens identitetsleverandør.
           </Text>
         </div>
+        {localProvider ? (
+          <form className="loginForm" onSubmit={submitLocalLogin}>
+            <label className="loginField">
+              <span>Brukernavn eller e-post</span>
+              <input
+                autoComplete="username"
+                name="username"
+                onChange={(event) => setIdentifier(event.target.value)}
+                type="text"
+                value={identifier}
+              />
+            </label>
+            <label className="loginField">
+              <span>Passord</span>
+              <input
+                autoComplete="current-password"
+                name="password"
+                onChange={(event) => setPassword(event.target.value)}
+                type="password"
+                value={password}
+              />
+            </label>
+            {error ? (
+              <Text className="loginError" size={200}>
+                {error}
+              </Text>
+            ) : null}
+            <Button appearance="primary" disabled={isSubmitting} size="large" type="submit">
+              Logg inn
+            </Button>
+          </form>
+        ) : null}
         <div className="loginProviderStack">
-          {providers.length ? (
-            providers.map((provider) => (
+          {externalProviders.length ? (
+            externalProviders.map((provider) => (
               <Button
                 key={provider.key}
                 appearance="primary"
@@ -1109,11 +1171,11 @@ function LoginPage({ providers }) {
                 Logg inn med {provider.label}
               </Button>
             ))
-          ) : (
+          ) : !localProvider ? (
             <Text>
-              Ingen innloggingsleverandører er konfigurert.
+              Ingen innloggingsmetoder er konfigurert.
             </Text>
-          )}
+          ) : null}
         </div>
       </Card>
     </div>

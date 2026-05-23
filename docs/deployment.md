@@ -116,13 +116,13 @@ If your server already has many containers, choose a free port that does not col
 
 ## Login Configuration
 
-SystemKontroll can require sign-in through Microsoft Entra ID/Azure AD, Google, or both. Authentication is enabled only when:
+SystemKontroll has its own built-in login and can optionally add Microsoft Entra ID/Azure AD and Google login buttons. Authentication is enabled only when:
 
 ```bash
 AUTH_REQUIRED=true
 ```
 
-If `AUTH_REQUIRED=true`, at least one provider must be configured and `AUTH_SESSION_SECRET` must contain at least 32 characters. If no provider is configured, users will see the login page but cannot sign in.
+If `AUTH_REQUIRED=true`, at least one login method must be configured and `AUTH_SESSION_SECRET` must contain at least 32 characters. The built-in SystemKontroll login is independent of Microsoft and Google, so the app can require login even before external identity providers are configured.
 
 ### Common authentication settings
 
@@ -157,9 +157,46 @@ AUTH_ALLOWED_EMAIL_DOMAINS=example.no,example.com
 AUTH_ALLOWED_EMAILS=ola.nordmann@example.no,kari.nordmann@example.no
 ```
 
-If both allow-list settings are empty, any account accepted by the configured identity provider can sign in.
+If both allow-list settings are empty, any account accepted by a configured login method can sign in.
 
 Sessions are held in the app process and signed with `AUTH_SESSION_SECRET`. Restarting or recreating the app container logs users out, but does not affect saved application data.
+
+### Built-in SystemKontroll login
+
+Use this login method when Entra ID or Google is not configured yet, or keep it as an emergency/admin fallback.
+
+```bash
+AUTH_LOCAL_ENABLED=true
+AUTH_LOCAL_USERNAME=admin
+AUTH_LOCAL_EMAIL=admin@example.no
+AUTH_LOCAL_NAME=SystemKontroll administrator
+AUTH_LOCAL_PASSWORD=<strong-local-password>
+```
+
+Generate a strong local password:
+
+```bash
+openssl rand -base64 24
+```
+
+If you prefer not to keep the plain password in `.env`, store a SHA-256 hash instead:
+
+```bash
+printf '%s' '<strong-local-password>' | sha256sum
+```
+
+Then configure:
+
+```bash
+AUTH_LOCAL_PASSWORD=
+AUTH_LOCAL_PASSWORD_SHA256=<sha256-hex-value>
+```
+
+Disable the built-in login only when another provider is ready:
+
+```bash
+AUTH_LOCAL_ENABLED=false
+```
 
 ### Microsoft Entra ID / Azure AD
 
@@ -221,7 +258,29 @@ AUTH_GOOGLE_CLIENT_ID=<google-client-id>
 AUTH_GOOGLE_CLIENT_SECRET=<google-client-secret>
 ```
 
-### Example with both providers
+### Example with local login only
+
+```bash
+AUTH_REQUIRED=true
+AUTH_BASE_URL=http://192.168.222.171:3100
+AUTH_SESSION_SECRET=<long-random-secret>
+AUTH_SESSION_HOURS=12
+AUTH_COOKIE_SECURE=false
+
+AUTH_LOCAL_ENABLED=true
+AUTH_LOCAL_USERNAME=admin
+AUTH_LOCAL_EMAIL=admin@example.no
+AUTH_LOCAL_NAME=SystemKontroll administrator
+AUTH_LOCAL_PASSWORD=<strong-local-password>
+
+AUTH_MICROSOFT_TENANT_ID=
+AUTH_MICROSOFT_CLIENT_ID=
+AUTH_MICROSOFT_CLIENT_SECRET=
+AUTH_GOOGLE_CLIENT_ID=
+AUTH_GOOGLE_CLIENT_SECRET=
+```
+
+### Example with local, Microsoft, and Google
 
 ```bash
 AUTH_REQUIRED=true
@@ -230,6 +289,12 @@ AUTH_SESSION_SECRET=<long-random-secret>
 AUTH_SESSION_HOURS=12
 AUTH_COOKIE_SECURE=false
 AUTH_ALLOWED_EMAIL_DOMAINS=example.no
+
+AUTH_LOCAL_ENABLED=true
+AUTH_LOCAL_USERNAME=admin
+AUTH_LOCAL_EMAIL=admin@example.no
+AUTH_LOCAL_NAME=SystemKontroll administrator
+AUTH_LOCAL_PASSWORD=<strong-local-password>
 
 AUTH_MICROSOFT_TENANT_ID=<directory-tenant-id>
 AUTH_MICROSOFT_CLIENT_ID=<application-client-id>
@@ -329,6 +394,12 @@ services:
       AUTH_SESSION_HOURS: 12
       AUTH_COOKIE_SECURE: "false"
       AUTH_ALLOWED_EMAIL_DOMAINS: example.no
+      AUTH_LOCAL_ENABLED: "true"
+      AUTH_LOCAL_USERNAME: admin
+      AUTH_LOCAL_EMAIL: admin@example.no
+      AUTH_LOCAL_NAME: SystemKontroll administrator
+      AUTH_LOCAL_PASSWORD: change-this-local-password
+      AUTH_LOCAL_PASSWORD_SHA256: ""
       AUTH_MICROSOFT_TENANT_ID: ""
       AUTH_MICROSOFT_CLIENT_ID: ""
       AUTH_MICROSOFT_CLIENT_SECRET: ""

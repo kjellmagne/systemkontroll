@@ -68,8 +68,46 @@ app.get("/api/auth/session", (req, res) => {
     authRequired: authConfig.required,
     authenticated: Boolean(session),
     user: session?.user ?? null,
-    providers: authConfig.providers.map(({ key, label }) => ({ key, label }))
+    providers: authConfig.providers.map(({ key, label, type }) => ({ key, label, type }))
   });
+});
+
+app.post("/api/auth/local", (req, res) => {
+  try {
+    if (!authConfig.required) {
+      res.json({ ok: true });
+      return;
+    }
+
+    if (!authConfig.localProvider.enabled) {
+      res.status(404).json({ error: "local_auth_not_configured" });
+      return;
+    }
+
+    const identifier = String(req.body?.identifier ?? "").trim().toLowerCase();
+    const password = String(req.body?.password ?? "");
+    const expectedIdentifiers = [authConfig.localProvider.username, authConfig.localProvider.email]
+      .filter(Boolean)
+      .map((value) => value.toLowerCase());
+
+    if (!expectedIdentifiers.includes(identifier) || !verifyLocalPassword(password)) {
+      res.status(401).json({ error: "invalid_credentials" });
+      return;
+    }
+
+    const user = {
+      provider: "local",
+      id: authConfig.localProvider.username,
+      name: authConfig.localProvider.name,
+      email: authConfig.localProvider.email
+    };
+    assertUserIsAllowed(user);
+    createAuthSession(res, user);
+    res.json({ ok: true, user });
+  } catch (error) {
+    console.error("Local login failed", error);
+    res.status(500).json({ error: "local_login_failed" });
+  }
 });
 
 app.get("/api/auth/login/:provider", async (req, res) => {
@@ -163,10 +201,7 @@ app.get("/api/auth/callback/:provider", async (req, res) => {
     const user = normalizeAuthenticatedUser(provider, claims);
     assertUserIsAllowed(user);
 
-    const sessionId = createToken(48);
-    const expiresAt = Date.now() + authConfig.sessionMaxAgeMs;
-    authSessionStore.set(sessionId, { user, createdAt: Date.now(), expiresAt });
-    setAuthSessionCookie(res, sessionId, expiresAt);
+    createAuthSession(res, user);
     res.redirect(attempt.returnTo);
   } catch (error) {
     console.error("Login callback failed", error);
@@ -388,14 +423,22 @@ function resolveAuthConfig() {
   const cookieSecure = process.env.AUTH_COOKIE_SECURE
     ? process.env.AUTH_COOKIE_SECURE === "true"
     : baseUrl.startsWith("https://");
-  const providers = [
+  const localProvider = resolveLocalProvider();
+  const externalProviders = [
     resolveMicrosoftProvider(baseUrl),
     resolveGoogleProvider(baseUrl)
   ].filter(Boolean);
+  const providers = [
+    ...(localProvider.enabled ? [{ key: "local", label: "SystemKontroll", type: "local" }] : []),
+    ...externalProviders
+  ];
   const required = process.env.AUTH_REQUIRED === "true";
 
   if (required && sessionSecret.length < 32) {
     throw new Error("AUTH_SESSION_SECRET must be set to at least 32 characters when AUTH_REQUIRED=true.");
+  }
+  if (required && providers.length === 0) {
+    throw new Error("At least one login method must be configured when AUTH_REQUIRED=true.");
   }
 
   return {
@@ -409,7 +452,24 @@ function resolveAuthConfig() {
     allowedDomains: parseCsv(process.env.AUTH_ALLOWED_EMAIL_DOMAINS).map((value) =>
       value.toLowerCase().replace(/^@/, "")
     ),
+    localProvider,
     providers
+  };
+}
+
+function resolveLocalProvider() {
+  const enabled = process.env.AUTH_LOCAL_ENABLED !== "false";
+  const password = String(process.env.AUTH_LOCAL_PASSWORD ?? "").trim();
+  const passwordSha256 = String(process.env.AUTH_LOCAL_PASSWORD_SHA256 ?? "").trim().toLowerCase();
+  const hasPassword = Boolean(password || passwordSha256);
+
+  return {
+    enabled: enabled && hasPassword,
+    username: String(process.env.AUTH_LOCAL_USERNAME ?? "admin").trim() || "admin",
+    email: String(process.env.AUTH_LOCAL_EMAIL ?? "admin@example.no").trim().toLowerCase() || "admin@example.no",
+    name: String(process.env.AUTH_LOCAL_NAME ?? "SystemKontroll administrator").trim() || "SystemKontroll administrator",
+    password,
+    passwordSha256
   };
 }
 
@@ -527,6 +587,36 @@ function assertUserIsAllowed(user) {
   }
 
   throw new Error(`User ${email} is not allowed to sign in.`);
+}
+
+function createAuthSession(res, user) {
+  const sessionId = createToken(48);
+  const expiresAt = Date.now() + authConfig.sessionMaxAgeMs;
+  authSessionStore.set(sessionId, { user, createdAt: Date.now(), expiresAt });
+  setAuthSessionCookie(res, sessionId, expiresAt);
+}
+
+function verifyLocalPassword(password) {
+  if (!authConfig.localProvider.enabled || !password) {
+    return false;
+  }
+
+  if (authConfig.localProvider.passwordSha256) {
+    const actualHash = createHash("sha256").update(password).digest("hex");
+    return timingSafeStringEqual(actualHash, authConfig.localProvider.passwordSha256);
+  }
+
+  return timingSafeStringEqual(password, authConfig.localProvider.password);
+}
+
+function timingSafeStringEqual(actual, expected) {
+  const actualBuffer = Buffer.from(String(actual));
+  const expectedBuffer = Buffer.from(String(expected));
+  if (actualBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(actualBuffer, expectedBuffer);
 }
 
 function requireAuthenticatedRequest(req, res, next) {
