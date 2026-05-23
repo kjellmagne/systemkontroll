@@ -94,6 +94,11 @@ import {
   StarRegular,
   TagRegular,
   TasksAppRegular,
+  TextBoldRegular,
+  TextBulletListLtrRegular,
+  TextItalicRegular,
+  TextNumberListLtrRegular,
+  TextUnderlineRegular,
   ToolboxRegular,
   VehicleCarRegular,
   VideoRegular,
@@ -4155,13 +4160,14 @@ function FieldControl({ appState, bootstrap, currentRecord, field, onChange, val
   let options = resolveFieldOptions(field, appState, bootstrap);
   const isWideField =
     field.control === "textarea" ||
+    field.control === "rich_text" ||
     field.key === "description" ||
     field.key?.includes("description") ||
     field.key?.includes("conditions") ||
     field.key?.includes("notes") ||
     field.key?.includes("contact_info") ||
     field.key?.includes("link");
-  const fieldClassName = `formField${isWideField ? " formField--wide" : ""}${field.control === "textarea" ? " formField--textarea" : ""}`;
+  const fieldClassName = `formField${isWideField ? " formField--wide" : ""}${["textarea", "rich_text"].includes(field.control) ? " formField--textarea" : ""}`;
   const organizationStructure = appState.organizationStructure ?? [];
   const serviceAreaValue = currentRecord?.fieldValues?.service_area;
   const organizationValue = currentRecord?.fieldValues?.organization;
@@ -4256,6 +4262,16 @@ function FieldControl({ appState, bootstrap, currentRecord, field, onChange, val
     );
   }
 
+  if (field.control === "rich_text") {
+    return (
+      <div className={fieldClassName}>
+        <Field label={<InlineLabel field={field} />}>
+          <RichTextEditor value={value} placeholder={field.placeholder} onChange={onChange} />
+        </Field>
+      </div>
+    );
+  }
+
   if (field.control === "table") {
     const rows = Array.isArray(value) ? value.filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry)) : [];
     const columns = inferColumnsFromRows(rows);
@@ -4313,6 +4329,196 @@ function FieldControl({ appState, bootstrap, currentRecord, field, onChange, val
       </Field>
     </div>
   );
+}
+
+function RichTextEditor({ value, placeholder, onChange }) {
+  const editorRef = React.useRef(null);
+  const sanitizedValue = React.useMemo(() => sanitizeRichTextHtml(value), [value]);
+
+  React.useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || document.activeElement === editor || editor.innerHTML === sanitizedValue) {
+      return;
+    }
+    editor.innerHTML = sanitizedValue;
+  }, [sanitizedValue]);
+
+  function updateValue() {
+    const nextValue = sanitizeRichTextHtml(editorRef.current?.innerHTML ?? "");
+    onChange(nextValue);
+  }
+
+  function applyCommand(command, commandValue = null) {
+    editorRef.current?.focus();
+    document.execCommand(command, false, commandValue);
+    updateValue();
+  }
+
+  function applyLink() {
+    const rawUrl = window.prompt("Lenkeadresse");
+    if (rawUrl === null) {
+      return;
+    }
+    const href = normalizeRichTextHref(rawUrl);
+    if (!href) {
+      applyCommand("unlink");
+      return;
+    }
+    applyCommand("createLink", href);
+  }
+
+  const preserveSelection = (event) => event.preventDefault();
+
+  return (
+    <div className="richTextEditor">
+      <div className="richTextToolbar" aria-label="Formatering">
+        <Tooltip content="Fet" relationship="label">
+          <Button appearance="subtle" size="small" icon={<TextBoldRegular />} onMouseDown={preserveSelection} onClick={() => applyCommand("bold")} />
+        </Tooltip>
+        <Tooltip content="Kursiv" relationship="label">
+          <Button appearance="subtle" size="small" icon={<TextItalicRegular />} onMouseDown={preserveSelection} onClick={() => applyCommand("italic")} />
+        </Tooltip>
+        <Tooltip content="Understreking" relationship="label">
+          <Button appearance="subtle" size="small" icon={<TextUnderlineRegular />} onMouseDown={preserveSelection} onClick={() => applyCommand("underline")} />
+        </Tooltip>
+        <Divider vertical />
+        <Tooltip content="Punktliste" relationship="label">
+          <Button appearance="subtle" size="small" icon={<TextBulletListLtrRegular />} onMouseDown={preserveSelection} onClick={() => applyCommand("insertUnorderedList")} />
+        </Tooltip>
+        <Tooltip content="Nummerert liste" relationship="label">
+          <Button appearance="subtle" size="small" icon={<TextNumberListLtrRegular />} onMouseDown={preserveSelection} onClick={() => applyCommand("insertOrderedList")} />
+        </Tooltip>
+        <Tooltip content="Lenke" relationship="label">
+          <Button appearance="subtle" size="small" icon={<LinkRegular />} onMouseDown={preserveSelection} onClick={applyLink} />
+        </Tooltip>
+      </div>
+      <div
+        ref={editorRef}
+        className="richTextEditable"
+        contentEditable
+        data-placeholder={placeholder ?? ""}
+        dangerouslySetInnerHTML={{ __html: sanitizedValue }}
+        onBlur={updateValue}
+        onInput={updateValue}
+        onPaste={(event) => {
+          event.preventDefault();
+          const html = event.clipboardData.getData("text/html");
+          const text = event.clipboardData.getData("text/plain");
+          document.execCommand("insertHTML", false, sanitizeRichTextHtml(html || text));
+          updateValue();
+        }}
+        role="textbox"
+        aria-multiline="true"
+        suppressContentEditableWarning
+      />
+    </div>
+  );
+}
+
+function sanitizeRichTextHtml(value) {
+  const rawValue = String(value ?? "").trim();
+  if (!rawValue) {
+    return "";
+  }
+
+  if (typeof document === "undefined") {
+    return escapeHtmlText(rawValue).replace(/\n/g, "<br>");
+  }
+
+  const sourceHtml = looksLikeHtml(rawValue) ? rawValue : escapeHtmlText(rawValue).replace(/\n/g, "<br>");
+  const template = document.createElement("template");
+  template.innerHTML = sourceHtml;
+  const sanitized = Array.from(template.content.childNodes).map(sanitizeRichTextNode).join("");
+  return normalizeEmptyRichText(sanitized);
+}
+
+function sanitizeRichTextNode(node) {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return escapeHtmlText(node.textContent ?? "");
+  }
+
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    return "";
+  }
+
+  const tagName = node.tagName.toLowerCase();
+  const children = Array.from(node.childNodes).map(sanitizeRichTextNode).join("");
+
+  if (["strong", "b"].includes(tagName)) {
+    return `<strong>${children}</strong>`;
+  }
+
+  if (["em", "i"].includes(tagName)) {
+    return `<em>${children}</em>`;
+  }
+
+  if (tagName === "u") {
+    return `<u>${children}</u>`;
+  }
+
+  if (tagName === "br") {
+    return "<br>";
+  }
+
+  if (["ul", "ol"].includes(tagName)) {
+    return `<${tagName}>${children}</${tagName}>`;
+  }
+
+  if (tagName === "li") {
+    return `<li>${children || "<br>"}</li>`;
+  }
+
+  if (["p", "div"].includes(tagName)) {
+    return `<p>${children || "<br>"}</p>`;
+  }
+
+  if (tagName === "a") {
+    const href = normalizeRichTextHref(node.getAttribute("href"));
+    return href ? `<a href="${escapeHtmlAttribute(href)}" target="_blank" rel="noreferrer">${children || escapeHtmlText(href)}</a>` : children;
+  }
+
+  return children;
+}
+
+function normalizeEmptyRichText(html) {
+  const normalized = String(html ?? "")
+    .replace(/<p><br><\/p>/g, "")
+    .replace(/<br\s*\/?>/gi, "")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+  return normalized ? html.trim() : "";
+}
+
+function normalizeRichTextHref(value) {
+  const trimmed = String(value ?? "").trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  if (/^(https?:|mailto:)/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    return `mailto:${trimmed}`;
+  }
+
+  return `https://${trimmed.replace(/^\/+/, "")}`;
+}
+
+function looksLikeHtml(value) {
+  return /<\/?[a-z][\s\S]*>/i.test(value);
+}
+
+function escapeHtmlText(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function escapeHtmlAttribute(value) {
+  return escapeHtmlText(value).replace(/"/g, "&quot;");
 }
 
 function createOrganizationAffiliation(serviceArea = "", organization = "", department = "") {
@@ -5707,7 +5913,7 @@ function CollectionEditor({ appState, collection, currentRecord, openDialog, row
                       field={{
                         key: isNis2Checklist ? "nis2_comment" : "grunnprinsipp_comment",
                         label: "Kommentar og oppfølging",
-                        control: "textarea",
+                        control: isNis2Checklist ? "textarea" : "rich_text",
                         placeholder: isNis2Checklist
                           ? "Beskriv vurdering, funn, avvik eller neste steg"
                           : "Beskriv modenhet, lokal vurdering, avvik eller planlagt oppfølging"

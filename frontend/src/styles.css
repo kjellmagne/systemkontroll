@@ -1097,6 +1097,59 @@ body:has(.shell[data-appearance="dark"]) {
   min-height: 112px;
 }
 
+.richTextEditor {
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 6px;
+  background: var(--surface-card);
+  overflow: hidden;
+}
+
+.richTextToolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-bottom: 1px solid var(--surface-border);
+  background: color-mix(in srgb, var(--surface-card-subtle) 86%, var(--surface-card) 14%);
+}
+
+.richTextEditable {
+  min-height: 132px;
+  padding: 10px 12px;
+  line-height: 1.45;
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.richTextEditable:focus {
+  box-shadow: inset 0 0 0 1px var(--accent-solid);
+}
+
+.richTextEditable:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.richTextEditable p {
+  margin: 0 0 8px;
+}
+
+.richTextEditable p:last-child {
+  margin-bottom: 0;
+}
+
+.richTextEditable ul,
+.richTextEditable ol {
+  margin: 6px 0 8px 22px;
+  padding: 0;
+}
+
+.richTextEditable a {
+  color: var(--accent-foreground);
+  text-decoration: underline;
+}
+
 .linkCardGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 220px));
