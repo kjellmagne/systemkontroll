@@ -96,16 +96,26 @@ export default function App() {
     };
   }, [authSession]);
 
+  async function loadCurrentAuthSession() {
+    const response = await fetch("/api/auth/session", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error("Klarte ikke å kontrollere innlogging.");
+    }
+    return response.json();
+  }
+
+  async function refreshAuthSession() {
+    const payload = await loadCurrentAuthSession();
+    setAuthSession(payload);
+    return payload;
+  }
+
   useEffect(() => {
     let isMounted = true;
 
     async function loadAuthSession() {
       try {
-        const response = await fetch("/api/auth/session");
-        if (!response.ok) {
-          throw new Error("Klarte ikke å kontrollere innlogging.");
-        }
-        const payload = await response.json();
+        const payload = await loadCurrentAuthSession();
         if (isMounted) {
           setAuthSession(payload);
         }
@@ -1036,7 +1046,11 @@ export default function App() {
                   className={`navButton ${isActive ? "isActive" : ""}`}
                   onClick={() => {
                     if (item.key === "settings") {
-                      setIsSettingsWindowOpen(true);
+                      refreshAuthSession()
+                        .catch((sessionError) => {
+                          showToast(sessionError.message ?? "Klarte ikke å oppdatere innlogging.", "error");
+                        })
+                        .finally(() => setIsSettingsWindowOpen(true));
                     } else if (item.key === "logout") {
                       handleLogout();
                     } else {
