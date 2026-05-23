@@ -2366,6 +2366,12 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   ];
   const isUserAdmin = authSession?.user?.role === "admin";
   const selectedUser = users.find((user) => user.id === selectedUserId) ?? null;
+  const settingsNavItems = [
+    { key: "catalogs", label: "Registere" },
+    { key: "users", label: "Brukeradministrasjon" },
+    { key: "apiKeys", label: "API-nøkler" },
+    { key: "themes", label: "Tema og farger" }
+  ];
 
   React.useEffect(() => {
     if (activeSettingsTab !== "users" || !isUserAdmin) {
@@ -2980,164 +2986,173 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   }
 
   return (
-    <div className="pageStack">
+    <div className="pageStack settingsPageStack">
       <PageHeader screen={currentScreen} onAction={onAction} />
-      <TabList selectedValue={activeSettingsTab} onTabSelect={(_event, data) => setActiveSettingsTab(String(data.value))}>
-        <Tab value="catalogs">Registere</Tab>
-        <Tab value="users">Brukere</Tab>
-        <Tab value="apiKeys">API-nøkler</Tab>
-        <Tab value="themes">Tema og farger</Tab>
-      </TabList>
+      <div className="settingsWorkspace">
+        <nav className="settingsSideNav" aria-label="Innstillinger">
+          {settingsNavItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`settingsSideNavItem ${activeSettingsTab === item.key ? "isActive" : ""}`}
+              onClick={() => setActiveSettingsTab(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="settingsContentPanel">
+          {activeSettingsTab === "catalogs" ? (
+            <>
+              <div className="twoColumnGrid">
+                {cards.map((card) => renderSettingsChipCard(card))}
+              </div>
 
-      {activeSettingsTab === "catalogs" ? (
-        <>
-          <div className="twoColumnGrid">
-            {cards.map((card) => renderSettingsChipCard(card))}
-          </div>
+              {renderSettingsChipCard(tagsCard, "settingsCard--fullWidth")}
 
-          {renderSettingsChipCard(tagsCard, "settingsCard--fullWidth")}
-
-          {activeInlineCard && inlineCatalogPanelPosition && typeof document !== "undefined"
-            ? createPortal(
-                <div
-                  ref={inlineCatalogPanelRef}
-                  className="dialogTagCreatePanel settingsTagCreatePanel settingsTagCreatePortal"
-                  style={inlineCatalogPanelPosition}
-                >
-                  <div className="dialogTagInputChip settingsTagInputChip">
-                    <div className="dialogTagInlineNameRow">
-                      <input
-                        className="dialogTagInlineInput"
-                        placeholder={`Ny ${activeInlineCard.singular}`}
-                        value={inlineCatalogAdd.value}
-                        onChange={(event) => setInlineCatalogAdd((current) => ({ ...current, key: activeInlineCard.key, value: event.target.value }))}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" && !event.shiftKey) {
-                            event.preventDefault();
-                            submitInlineCatalogValue(activeInlineCard);
-                          }
-                          if (event.key === "Escape") {
-                            closeInlineCatalogAdd();
-                          }
-                        }}
-                      />
-                      {activeInlineCard.key === "tagsCatalog" ? (
-                        <InlineTagColorTrigger
-                          ariaLabel="Velg farge for ny merkelapp"
-                          value={inlineCatalogAdd.color}
-                          onChange={(nextColor) => setInlineCatalogAdd((current) => ({ ...current, key: activeInlineCard.key, color: nextColor }))}
-                        />
-                      ) : null}
-                    </div>
-                    {activeInlineCard.supportsInlineDescription ? (
-                      <div className="dialogTagDescriptionSlot">
-                        <textarea
-                          className="dialogTagInlineTextarea"
-                          rows={2}
-                          placeholder="Kort beskrivelse"
-                          value={inlineCatalogAdd.description ?? ""}
-                          onChange={(event) => setInlineCatalogAdd((current) => ({ ...current, key: activeInlineCard.key, description: event.target.value }))}
-                        />
+              {activeInlineCard && inlineCatalogPanelPosition && typeof document !== "undefined"
+                ? createPortal(
+                    <div
+                      ref={inlineCatalogPanelRef}
+                      className="dialogTagCreatePanel settingsTagCreatePanel settingsTagCreatePortal"
+                      style={inlineCatalogPanelPosition}
+                    >
+                      <div className="dialogTagInputChip settingsTagInputChip">
+                        <div className="dialogTagInlineNameRow">
+                          <input
+                            className="dialogTagInlineInput"
+                            placeholder={`Ny ${activeInlineCard.singular}`}
+                            value={inlineCatalogAdd.value}
+                            onChange={(event) => setInlineCatalogAdd((current) => ({ ...current, key: activeInlineCard.key, value: event.target.value }))}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" && !event.shiftKey) {
+                                event.preventDefault();
+                                submitInlineCatalogValue(activeInlineCard);
+                              }
+                              if (event.key === "Escape") {
+                                closeInlineCatalogAdd();
+                              }
+                            }}
+                          />
+                          {activeInlineCard.key === "tagsCatalog" ? (
+                            <InlineTagColorTrigger
+                              ariaLabel="Velg farge for ny merkelapp"
+                              value={inlineCatalogAdd.color}
+                              onChange={(nextColor) => setInlineCatalogAdd((current) => ({ ...current, key: activeInlineCard.key, color: nextColor }))}
+                            />
+                          ) : null}
+                        </div>
+                        {activeInlineCard.supportsInlineDescription ? (
+                          <div className="dialogTagDescriptionSlot">
+                            <textarea
+                              className="dialogTagInlineTextarea"
+                              rows={2}
+                              placeholder="Kort beskrivelse"
+                              value={inlineCatalogAdd.description ?? ""}
+                              onChange={(event) => setInlineCatalogAdd((current) => ({ ...current, key: activeInlineCard.key, description: event.target.value }))}
+                            />
+                          </div>
+                        ) : null}
+                        <div className="dialogTagCreateActions">
+                          <button
+                            type="button"
+                            className="dialogTagInlineCancel"
+                            onClick={closeInlineCatalogAdd}
+                          >
+                            Avbryt
+                          </button>
+                          <button
+                            type="button"
+                            className="dialogTagInlineConfirm"
+                            aria-label={`Lagre ny ${activeInlineCard.singular}`}
+                            onClick={() => submitInlineCatalogValue(activeInlineCard)}
+                          >
+                            <CheckmarkRegular />
+                          </button>
+                        </div>
                       </div>
-                    ) : null}
-                    <div className="dialogTagCreateActions">
-                      <button
-                        type="button"
-                        className="dialogTagInlineCancel"
-                        onClick={closeInlineCatalogAdd}
-                      >
-                        Avbryt
-                      </button>
-                      <button
-                        type="button"
-                        className="dialogTagInlineConfirm"
-                        aria-label={`Lagre ny ${activeInlineCard.singular}`}
-                        onClick={() => submitInlineCatalogValue(activeInlineCard)}
-                      >
-                        <CheckmarkRegular />
-                      </button>
-                    </div>
-                  </div>
-                </div>,
-                document.body
-              )
-            : null}
-        </>
-      ) : activeSettingsTab === "users" ? (
-        renderUsersTab()
-      ) : activeSettingsTab === "apiKeys" ? (
-        renderApiKeysTab()
-      ) : (
-        <Card className="settingsCard settingsCard--fullWidth" appearance="filled-alternative">
-          <div className="headerStack compact">
-            <Title3>Tema og farger</Title3>
-            <Body1>Styr visuell retning for løsningen. Valgene lagres i innstillinger og kan senere kobles videre til rettigheter og utvidet tematikk.</Body1>
-          </div>
+                    </div>,
+                    document.body
+                  )
+                : null}
+            </>
+          ) : activeSettingsTab === "users" ? (
+            renderUsersTab()
+          ) : activeSettingsTab === "apiKeys" ? (
+            renderApiKeysTab()
+          ) : (
+            <Card className="settingsCard settingsCard--fullWidth" appearance="filled-alternative">
+              <div className="headerStack compact">
+                <Title3>Tema og farger</Title3>
+                <Body1>Styr visuell retning for løsningen. Valgene lagres i innstillinger og kan senere kobles videre til rettigheter og utvidet tematikk.</Body1>
+              </div>
 
-          <div className="settingsThemeGrid">
-            <Field label="Utseende">
-              <RadioGroup
-                value={themePreferences.appearance}
-                onChange={(_event, data) =>
-                  updateDraft((nextState) => {
-                    nextState.settings.themePreferences.appearance = data.value;
-                  })
-                }
-              >
-                <Radio value="light" label="Lyst" />
-                <Radio value="system" label="Følg system" />
-              </RadioGroup>
-            </Field>
-
-            <Field label="Flateprofil">
-              <RadioGroup
-                value={themePreferences.surface}
-                onChange={(_event, data) =>
-                  updateDraft((nextState) => {
-                    nextState.settings.themePreferences.surface = data.value;
-                  })
-                }
-              >
-                <Radio value="warm" label="Varm nøytral" />
-                <Radio value="neutral" label="Nøytral grå" />
-                <Radio value="cool" label="Kjølig blågrå" />
-              </RadioGroup>
-            </Field>
-
-            <Field className="settingsThemeField--wide" label="Accentfarge">
-              <div className="themeSwatchGrid">
-                {accentOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={`themeSwatchButton ${themePreferences.accent === option.value ? "isSelected" : ""}`}
-                    onClick={() =>
+              <div className="settingsThemeGrid">
+                <Field label="Utseende">
+                  <RadioGroup
+                    value={themePreferences.appearance}
+                    onChange={(_event, data) =>
                       updateDraft((nextState) => {
-                        nextState.settings.themePreferences.accent = option.value;
+                        nextState.settings.themePreferences.appearance = data.value;
                       })
                     }
                   >
-                    <span className="themeSwatchColor" style={{ background: option.color }} />
-                    <span>{option.label}</span>
-                  </button>
-                ))}
-              </div>
-            </Field>
-          </div>
+                    <Radio value="light" label="Lyst" />
+                    <Radio value="system" label="Følg system" />
+                  </RadioGroup>
+                </Field>
 
-          <Card appearance="subtle" className="themePreviewCard">
-            <div className="headerStack compact">
-              <Text weight="semibold">Forhåndsvisning</Text>
-              <Body1>Denne fanen gir et sentralt sted for å styre visuelle valg. Den kan senere kobles til mer komplett tema- og rettighetsstyring.</Body1>
-            </div>
-            <div className="themePreviewRow">
-              <Badge appearance="filled">Accent</Badge>
-              <Tag className="labelChip">Eksempelmerkelapp</Tag>
-              <Button appearance="primary">Primær handling</Button>
-            </div>
-          </Card>
-        </Card>
-      )}
+                <Field label="Flateprofil">
+                  <RadioGroup
+                    value={themePreferences.surface}
+                    onChange={(_event, data) =>
+                      updateDraft((nextState) => {
+                        nextState.settings.themePreferences.surface = data.value;
+                      })
+                    }
+                  >
+                    <Radio value="warm" label="Varm nøytral" />
+                    <Radio value="neutral" label="Nøytral grå" />
+                    <Radio value="cool" label="Kjølig blågrå" />
+                  </RadioGroup>
+                </Field>
+
+                <Field className="settingsThemeField--wide" label="Accentfarge">
+                  <div className="themeSwatchGrid">
+                    {accentOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`themeSwatchButton ${themePreferences.accent === option.value ? "isSelected" : ""}`}
+                        onClick={() =>
+                          updateDraft((nextState) => {
+                            nextState.settings.themePreferences.accent = option.value;
+                          })
+                        }
+                      >
+                        <span className="themeSwatchColor" style={{ background: option.color }} />
+                        <span>{option.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+              </div>
+
+              <Card appearance="subtle" className="themePreviewCard">
+                <div className="headerStack compact">
+                  <Text weight="semibold">Forhåndsvisning</Text>
+                  <Body1>Denne fanen gir et sentralt sted for å styre visuelle valg. Den kan senere kobles til mer komplett tema- og rettighetsstyring.</Body1>
+                </div>
+                <div className="themePreviewRow">
+                  <Badge appearance="filled">Accent</Badge>
+                  <Tag className="labelChip">Eksempelmerkelapp</Tag>
+                  <Button appearance="primary">Primær handling</Button>
+                </div>
+              </Card>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
