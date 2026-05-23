@@ -212,7 +212,7 @@ export const grunnprinsipperIktSikkerhetRecord = {
   },
   collectionValues: principleCollections,
   meta: {
-    lastModifiedBy: "Ken Are Johnsen",
+    lastModifiedBy: "Ola Nordmann",
     createdAt: "2026-03-28",
     lastUpdated: "2026-03-28"
   }

@@ -315,6 +315,101 @@ This means the persistence strategy is intentionally simple and pragmatic:
 
 That is a strong fit for a rapidly evolving governance application where schema flexibility matters more than early table decomposition.
 
+## Database Attachment Model
+
+The Docker image is intended to be database-agnostic.
+
+SystemKontroll does not require PostgreSQL to run in the same Compose project or even on the same machine. The application only needs:
+
+- network reachability to a PostgreSQL server
+- valid credentials
+- permission to create and update the application tables it owns
+
+### Connection modes
+
+The application supports two connection styles:
+
+1. `DATABASE_URL`
+   Use a full PostgreSQL connection string when that is the easiest way to represent the target database.
+
+2. `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+   Use individual environment variables when you want explicit per-field configuration.
+
+If `DATABASE_URL` is set, it takes precedence over the individual `DB_*` variables.
+
+Optional SSL is controlled with:
+
+```bash
+DATABASE_SSL=true
+```
+
+### Supported deployment patterns
+
+This means the same Docker image can be used with all of these variants:
+
+- PostgreSQL in another Docker container on the same Docker network
+- PostgreSQL installed directly on the same Linux server as the app container
+- PostgreSQL running on another Linux server
+- PostgreSQL running on a Windows server
+- any other reachable PostgreSQL-compatible endpoint that accepts the connection settings
+
+### Examples
+
+#### Example A: PostgreSQL in Docker on the same host/network
+
+```bash
+PORT=3000
+DB_HOST=systemkontroll-db
+DB_PORT=5432
+DB_NAME=systemkontroll
+DB_USER=systemkontroll
+DB_PASSWORD=systemkontroll
+DATABASE_SSL=false
+```
+
+#### Example B: PostgreSQL installed locally on the same server
+
+The app container must use a host name or IP address that is reachable from inside the container.
+
+```bash
+PORT=3000
+DB_HOST=<server-hostname-or-ip>
+DB_PORT=5432
+DB_NAME=systemkontroll
+DB_USER=systemkontroll
+DB_PASSWORD=<password>
+DATABASE_SSL=false
+```
+
+#### Example C: remote PostgreSQL server
+
+```bash
+PORT=3000
+DB_HOST=<remote-hostname-or-ip>
+DB_PORT=5432
+DB_NAME=systemkontroll
+DB_USER=systemkontroll
+DB_PASSWORD=<password>
+DATABASE_SSL=true
+```
+
+#### Example D: connection string
+
+```bash
+PORT=3000
+DATABASE_URL=postgresql://systemkontroll:<password>@db.example.internal:5432/systemkontroll
+DATABASE_SSL=true
+```
+
+### What the app creates in the target database
+
+On startup, the app ensures these tables exist in the target PostgreSQL database:
+
+- `app_state`
+- `uploaded_files`
+
+That means the database attachment is dynamic, but the app still assumes it is allowed to initialize and maintain its own storage objects inside the selected database.
+
 ## Repository Layout
 
 ```text
@@ -370,7 +465,12 @@ npm run validate
 
 Create a local environment file based on `.env.example` and ensure PostgreSQL is available.
 
-Required variables:
+You can configure the database in either of these two ways:
+
+1. a full `DATABASE_URL`
+2. individual `DB_*` variables
+
+Example with individual variables:
 
 ```bash
 PORT=3000
@@ -379,6 +479,15 @@ DB_PORT=5432
 DB_NAME=systemkontroll
 DB_USER=systemkontroll
 DB_PASSWORD=systemkontroll
+ORG_STRUCTURE_PATH=./public/organization-structure.json
+```
+
+Example with a connection string:
+
+```bash
+PORT=3000
+DATABASE_URL=postgresql://systemkontroll:systemkontroll@127.0.0.1:5432/systemkontroll
+DATABASE_SSL=false
 ORG_STRUCTURE_PATH=./public/organization-structure.json
 ```
 
@@ -397,13 +506,16 @@ http://localhost:3000
 ### Run with Docker Compose
 
 ```bash
-docker compose up --build
+docker compose pull
+docker compose up -d
 ```
 
 This starts:
 
-- the Node application on port `3000`
+- the prebuilt SystemKontroll app image from GitHub Container Registry
+- the Node application on host port `3100` by default
 - PostgreSQL 16 with a persistent named volume
+- a bind-mounted `./data` folder for `organization-structure.json`
 
 ### Build steps
 
@@ -441,7 +553,7 @@ The container exposes port `3000`.
 - `app`
 - `db`
 
-The app service depends on the PostgreSQL health check and binds port `3000` to the host.
+The app service uses the prebuilt image and does not build source code through Compose. It depends on the PostgreSQL health check and binds container port `3000` to host port `3100` by default.
 
 ## GitHub Actions and Docker Images
 
@@ -458,7 +570,7 @@ The workflow is designed to:
 Expected image path:
 
 ```text
-ghcr.io/<github-owner>/systemkontroll
+ghcr.io/kjellmagne/systemkontroll
 ```
 
 Typical tags include:
@@ -469,13 +581,26 @@ Typical tags include:
 
 ## Deployment Notes
 
+Detailed deployment instructions are available in:
+
+- [docs/deployment.md](./docs/deployment.md)
+- [docs/computer-migration.md](./docs/computer-migration.md)
+
 ### Recommended deployment model
 
 The current easiest deployment path is:
 
 1. build and publish a Docker image from GitHub Actions
-2. pull that image onto a Linux host
-3. run it with PostgreSQL, either via Docker Compose or a compatible container setup
+2. pull that image onto server `192.168.222.171`
+3. run it with PostgreSQL in Docker through Docker Compose or `docker-compose`
+
+Do not clone the repository or build source code on the server. The server should consume the image produced by GitHub Actions.
+
+The important long-term design rule is:
+
+- the Docker image should stay portable
+- the production deployment for `192.168.222.171` should run both app and PostgreSQL as Docker containers
+- the app should still attach to PostgreSQL through environment variables so the image remains reusable
 
 ### Secrets and credentials
 
@@ -523,6 +648,149 @@ At a minimum, each substantial feature change should answer:
 - strong reuse of UI patterns
 - flexible JSONB-backed persistence for rapid iteration
 
+## Future-Proof Backend Roadmap
+
+The current backend choice is good:
+
+- `Node/Express` is a practical API/runtime layer
+- `PostgreSQL` is the right long-term database
+- Docker packaging keeps deployment portable
+
+What should evolve over time is not the core stack, but how responsibilities are separated inside it.
+
+### Phase 1: Keep the current model, but make it deployment-safe
+
+In the current phase, the app can continue to use:
+
+- PostgreSQL as the primary persistence layer
+- the existing JSONB-centered app state for fast-moving UI structures
+- environment-based database attachment so the same image works with Docker PostgreSQL, local PostgreSQL, or remote PostgreSQL
+
+This phase is about preserving speed while keeping deployments flexible.
+
+### Phase 2: Add structured tables for operational features
+
+As soon as the app starts managing real operational deadlines and lifecycle events, some concepts should move out of the general app-state blob and become first-class database tables.
+
+Likely candidates:
+
+- certificates
+- contracts and renewals
+- scheduled reviews
+- tasks and follow-up items
+- reminders and escalation rules
+
+Why:
+
+- these records usually need clear queryability
+- they often need filtering by date, owner, status, and severity
+- they are better suited for indexing and reporting than a generic JSON document
+
+Recommended rule:
+
+- keep flexible UI-heavy content in JSONB where that still makes sense
+- move time-critical, reportable, and automatable business objects into normal relational tables
+
+### Phase 3: Split web/API from background work
+
+When the app starts sending emails or triggering actions on dates, add a separate worker process or worker container.
+
+The web server should handle:
+
+- UI/API requests
+- validation
+- persistence
+- file upload/download
+
+The worker should handle:
+
+- scheduled checks
+- deadline scanning
+- reminder generation
+- outbound email sending
+- webhook or action triggering
+- retry logic for failed notifications
+
+This is an important future-proofing step because schedulers and background jobs are more reliable when they are not tied to the request-serving process.
+
+### Phase 4: Introduce notification and automation tables
+
+A minimal next-generation automation model would likely include tables such as:
+
+- `scheduled_actions`
+- `notifications`
+- `notification_deliveries`
+- `event_log`
+
+Typical responsibilities:
+
+- `scheduled_actions`
+  - what should happen
+  - when it should happen
+  - which record/entity it belongs to
+- `notifications`
+  - the business reminder or alert to be sent
+- `notification_deliveries`
+  - each actual email/webhook delivery attempt
+- `event_log`
+  - immutable audit trail for backend-triggered events
+
+This prevents duplicate reminders, improves auditability, and makes the system safer for compliance use cases.
+
+### Phase 5: Add a real migration strategy
+
+Once the backend contains more than the current bootstrap schema, database migrations should become explicit and versioned.
+
+That likely means introducing:
+
+- a migration tool
+- versioned schema changes
+- environment-safe rollout steps
+- backup and rollback procedures
+
+This becomes especially important when:
+
+- multiple deployments exist
+- production data is long-lived
+- different customers or environments upgrade at different times
+
+### Phase 6: Harden integrations and secrets
+
+As external dependencies grow, the backend should standardize:
+
+- SMTP or email-provider integration
+- secret injection through environment variables or a secret manager
+- SSL/TLS handling for PostgreSQL
+- structured configuration for per-environment behavior
+
+The app image should remain portable, while secrets and infrastructure-specific connection details remain externalized.
+
+### Phase 7: Improve observability and recovery
+
+For a mature operational deployment, the backend should eventually include:
+
+- structured logs
+- worker/job logs
+- health checks for both app and worker
+- backup procedures for PostgreSQL
+- restore testing
+- alerting for failed scheduled actions
+
+This matters because the moment the app is responsible for deadlines, renewals, certificates, and reminders, missing a background job becomes a business issue, not just a technical one.
+
+### Long-term architectural rule
+
+The safest long-term direction is:
+
+1. keep PostgreSQL as the core system of record
+2. keep the app container portable and database-agnostic
+3. keep flexible UI/state data where JSONB still adds value
+4. introduce relational tables for important operational domains
+5. run scheduled actions in a separate worker role
+6. log backend-triggered events in an auditable way
+
+That roadmap avoids overengineering too early, while still giving the project a clear path from "editable governance records" to "active operational platform."
+
 ## Current Limitations
 
 - persistence is still centered on a single JSONB state document, which is great for iteration but will need careful governance as complexity grows
@@ -536,6 +804,7 @@ As the project matures, the next useful docs would likely be:
 
 - `docs/domain-model.md`
 - `docs/deployment.md`
+- `docs/computer-migration.md`
 - `docs/admin-workflows.md`
 - `docs/catalogs-and-tags.md`
 - `docs/release-process.md`

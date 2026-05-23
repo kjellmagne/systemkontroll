@@ -1739,7 +1739,7 @@ structures:
     entity: Organization
     source:
       route_pattern: "/digiorden/organizations/{id}"
-      example_title: "Hammerfest kommune"
+      example_title: "Min organisasjon"
       source_status: partial_help_text_visibility
     sections:
       - key: organization_information

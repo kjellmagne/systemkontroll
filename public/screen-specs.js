@@ -377,7 +377,7 @@ export const organizationStructureData = [
     organizations: [
       {
         name: "Skole og læring",
-        departments: ["Hammerfest skole", "SFO", "Pedagogisk støtte"]
+        departments: ["Eksempelskolen", "SFO", "Pedagogisk støtte"]
       },
       {
         name: "Barnehage",
@@ -524,7 +524,7 @@ export const controllerProtocolInventoryItems = [
   {
     id: "CTRL-2023-0206",
     name: "Oppfølging av barnevernssaker",
-    controller: "Hammerfest kommune",
+    controller: "Min organisasjon",
     legalBasis: "Offentlig myndighet",
     status: "Godkjent",
     privacyRisk: "Høy",
@@ -533,7 +533,7 @@ export const controllerProtocolInventoryItems = [
   {
     id: "CTRL-2024-0112",
     name: "Ansattoppfølging og sykefravær",
-    controller: "Hammerfest kommune",
+    controller: "Min organisasjon",
     legalBasis: "Rettslig plikt",
     status: "Under vurdering",
     privacyRisk: "Middels",
@@ -542,7 +542,7 @@ export const controllerProtocolInventoryItems = [
   {
     id: "CTRL-2025-0721",
     name: "Tildeling av barnehageplass",
-    controller: "Hammerfest kommune",
+    controller: "Min organisasjon",
     legalBasis: "Offentlig myndighet",
     status: "Avvik funnet",
     privacyRisk: "Høy",
@@ -594,7 +594,7 @@ export const mockRecords = {
       vendor: "Visma Norge AS",
       description:
         "Visma Enterprise HRM er en komplett løsning for personaladministrasjon, lønnskjøring og fraværshåndtering. Systemet er integrert med statlige registre og støtter komplekse tariffavtaler.",
-      system_responsible: "Erik Jensen",
+      system_responsible: "Ola Nordmann",
       system_owner: "HR-Avdelingen (HR-DIR)",
       not_relevant_for_application: false,
       accessibility_statement_required: true,
@@ -681,8 +681,8 @@ export const mockRecords = {
         { Kriterie: "Tilgjengelighet", Poengsum: "2", Kommentar: "Tiltak planlagt for å lukke dokumentasjonsgap.", Dato: "2025-11-18" }
       ],
       application_experts: [
-        { Navn: "Ingunn Johansen", "E-post": "ingunn.johansen@example.no" },
-        { Navn: "Jørn-Petter Fagerheim", "E-post": "jorn-petter.fagerheim@example.no" }
+        { Navn: "Ingrid Nilsen", "E-post": "ingrid.nilsen@example.no" },
+        { Navn: "Lars Larsen", "E-post": "lars.larsen@example.no" }
       ],
       labels: [
         settingsCatalogIdByName.tagsCatalog.HR,
@@ -691,7 +691,7 @@ export const mockRecords = {
       ]
     },
     meta: {
-      lastModifiedBy: "Lene Berntsen",
+      lastModifiedBy: "Kari Nordmann",
       createdAt: "2019-11-14",
       lastUpdated: "2026-03-24"
     }
@@ -750,7 +750,7 @@ export const mockRecords = {
       ]
     },
     meta: {
-      lastModifiedBy: "Aina Solheim",
+      lastModifiedBy: "Anne Olsen",
       createdAt: "2022-08-30",
       lastUpdated: "2026-03-25"
     }
@@ -763,8 +763,8 @@ export const mockRecords = {
     fieldValues: {
       name: "Oppfølging av barnevernssaker",
       processing_description: "Registrering og oppfølging av tiltak, vedtak og kommunikasjon i barnevernssaker.",
-      controller: "Hammerfest kommune",
-      data_protection_officer: "Lene Berntsen",
+      controller: "Min organisasjon",
+      data_protection_officer: "Kari Nordmann",
       joint_controllers: ["NAV Troms og Finnmark"],
       purposes: ["Saksbehandling", "Statistikkformål"],
       data_subject_categories: ["Barn", "Foresatte", "Verge"],
@@ -784,14 +784,14 @@ export const mockRecords = {
       personal_data_source: ["Den registrerte", "Foresatte", "Offentlig dataregister"],
       data_processors: ["Driftspartner AS"],
       data_processor_agreements: [{ Leverandør: "Driftspartner AS", "Signert dato": "10.02.2024", Status: "Aktiv" }],
-      internal_responsible: "Aina Solheim",
+      internal_responsible: "Anne Olsen",
       additional_notes: "DPIA er gjennomført og oppdateres årlig."
     },
     collectionValues: {
       datasets: [{ Navn: "Barnevern Datasett", Rolle: "Primærdatasett" }]
     },
     meta: {
-      lastModifiedBy: "Lene Berntsen",
+      lastModifiedBy: "Kari Nordmann",
       createdAt: "2023-06-02",
       lastUpdated: "2026-03-21"
     }
@@ -804,49 +804,49 @@ export const mockRecords = {
     fieldValues: {
       name: "Drift av sakssystem for kommunal oppfølging",
       processor: "Driftspartner AS",
-      controllers: ["Hammerfest kommune", "Alta kommune"],
-      data_protection_officer: "Lene Berntsen",
+      controllers: ["Min organisasjon", "Samarbeidsorganisasjon"],
+      data_protection_officer: "Kari Nordmann",
       processing_categories: ["Lagring", "Bruk", "Registrering", "Utlevering ved overføring"],
       third_country_or_international_organization: "Ingen tredjestatsoverføring",
       guarantees_or_agreement: "Underlagt norsk databehandleravtale og driftsinstruks.",
       security_measures:
         "MFA for administratorer, segmentert nettverk, kryptert backup, hendelseslogging og dokumentert beredskapsplan.",
-      internal_responsible: "Morten Solbakken",
+      internal_responsible: "Per Hansen",
       additional_notes: "Årlig revisjon utføres sammen med kundens sikkerhetsansvarlige."
     },
     collectionValues: {},
     meta: {
-      lastModifiedBy: "Morten Solbakken",
+      lastModifiedBy: "Per Hansen",
       createdAt: "2026-03-24",
       lastUpdated: "2026-03-25"
     }
   },
   roles: {
     id: "ORG-540291",
-    breadcrumbs: ["Organisasjon", "Roller", "Hammerfest kommune"],
+    breadcrumbs: ["Organisasjon", "Roller", "Min organisasjon"],
     description:
       "Administrasjon av organisasjonsinformasjon, kontaktroller og personvernerklæringer for virksomheten.",
     fieldValues: {
-      organization_name: "Hammerfest kommune",
-      organization_number: "540291901",
+      organization_name: "Min organisasjon",
+      organization_number: "999999999",
       label_name: ""
     },
     collectionValues: {
       application_experts: [
-        { Navn: "Erik Jensen", "E-post": "erik.jensen@hammerfest.kommune.no" },
-        { Navn: "Aina Solheim", "E-post": "aina.solheim@hammerfest.kommune.no" }
+        { Navn: "Ola Nordmann", "E-post": "ola.nordmann@example.no" },
+        { Navn: "Kari Nordmann", "E-post": "kari.nordmann@example.no" }
       ],
       system_responsibles: [
-        { Navn: "Erik Jensen", Epost: "erik.jensen@hammerfest.kommune.no" },
-        { Navn: "Aina Solheim", Epost: "aina.solheim@hammerfest.kommune.no" },
-        { Navn: "Morten Solbakken", Epost: "morten.solbakken@hammerfest.kommune.no" }
+        { Navn: "Ola Nordmann", Epost: "ola.nordmann@example.no" },
+        { Navn: "Kari Nordmann", Epost: "kari.nordmann@example.no" },
+        { Navn: "Per Hansen", Epost: "per.hansen@example.no" }
       ],
-      system_owners: [{ Navn: "HR-Avdelingen", Epost: "hr@hammerfest.kommune.no" }],
-      controllers: [{ Navn: "Hammerfest kommune", Epost: "postmottak@hammerfest.kommune.no", Fra: "2024-01-01", Til: "Aktiv" }],
-      controller_representatives: [{ Navn: "Lene Berntsen", Epost: "lene.berntsen@hammerfest.kommune.no" }],
+      system_owners: [{ Navn: "HR-avdelingen", Epost: "hr@example.no" }],
+      controllers: [{ Navn: "Min organisasjon", Epost: "postmottak@example.no", Fra: "2024-01-01", Til: "Aktiv" }],
+      controller_representatives: [{ Navn: "Kari Nordmann", Epost: "kari.nordmann@example.no" }],
       joint_controllers: [{ Navn: "KS Digital", Epost: "kontakt@ks.no" }],
-      data_protection_officers: [{ Navn: "Lene Berntsen", Epost: "lene.berntsen@hammerfest.kommune.no", Fra: "2023-09-01", Til: "Aktiv" }],
-      processor_protocol_controllers: [{ Navn: "Hammerfest kommune", Epost: "postmottak@hammerfest.kommune.no" }],
+      data_protection_officers: [{ Navn: "Kari Nordmann", Epost: "kari.nordmann@example.no", Fra: "2023-09-01", Til: "Aktiv" }],
+      processor_protocol_controllers: [{ Navn: "Min organisasjon", Epost: "postmottak@example.no" }],
       privacy_statements: [{ Fil: "standard-personvernerklaering.pdf", "Sist oppdatert": "2026-02-14", Type: "Standard erklæring" }],
       labels: [
         settingsCatalogIdByName.tagsCatalog.HR,
@@ -855,7 +855,7 @@ export const mockRecords = {
       ]
     },
     meta: {
-      lastModifiedBy: "Erik Jensen",
+      lastModifiedBy: "Ola Nordmann",
       createdAt: "2021-03-12",
       lastUpdated: "2026-03-18"
     }
@@ -1122,7 +1122,7 @@ export const screenRegistry = [
     topSection: "organization",
     navKey: "roles",
     recordKey: "roles",
-    title: "Hammerfest kommune",
+    title: "Min organisasjon",
     sectionSource: "model",
     actions: [{ label: "Lagre endringer", icon: "save", tone: "primary" }],
     sectionLayouts: {

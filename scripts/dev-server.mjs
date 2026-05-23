@@ -2,9 +2,10 @@ import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import express from "express";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import { Pool } from "pg";
 import { createDefaultPersistedState, normalizePersistedState } from "./persisted-state.mjs";
 import {
@@ -23,6 +24,11 @@ const organizationStructurePath = process.env.ORG_STRUCTURE_PATH
   ? path.resolve(process.env.ORG_STRUCTURE_PATH)
   : path.join(publicDir, "organization-structure.json");
 const port = Number(process.env.PORT ?? 3000);
+const authConfig = resolveAuthConfig();
+const authAttemptStore = new Map();
+const authSessionStore = new Map();
+const discoveryCache = new Map();
+const jwksCache = new Map();
 
 if (!existsSync(generatedModelPath)) {
   const result = spawnSync(process.execPath, [path.join(rootDir, "scripts", "build-data.mjs")], {
@@ -42,6 +48,9 @@ await seedPersistedState(pool);
 
 const app = express();
 app.disable("x-powered-by");
+if (process.env.TRUST_PROXY === "true") {
+  app.set("trust proxy", 1);
+}
 app.use(express.json({ limit: "30mb" }));
 
 app.get("/api/health", async (_req, res) => {
@@ -52,6 +61,131 @@ app.get("/api/health", async (_req, res) => {
     res.status(503).json({ ok: false, error: "database_unavailable", detail: error.message });
   }
 });
+
+app.get("/api/auth/session", (req, res) => {
+  const session = readAuthSession(req);
+  res.json({
+    authRequired: authConfig.required,
+    authenticated: Boolean(session),
+    user: session?.user ?? null,
+    providers: authConfig.providers.map(({ key, label }) => ({ key, label }))
+  });
+});
+
+app.get("/api/auth/login/:provider", async (req, res) => {
+  try {
+    if (!authConfig.required) {
+      res.redirect(normalizeLocalReturnTo(req.query.returnTo));
+      return;
+    }
+
+    const provider = authConfig.providers.find((candidate) => candidate.key === req.params.provider);
+    if (!provider) {
+      res.status(404).json({ error: "auth_provider_not_configured" });
+      return;
+    }
+
+    purgeExpiredAuthRecords();
+    const discovery = await resolveProviderDiscovery(provider);
+    const state = createToken();
+    const nonce = createToken();
+    const codeVerifier = createToken(48);
+    const codeChallenge = base64Url(createHash("sha256").update(codeVerifier).digest());
+    const returnTo = normalizeLocalReturnTo(req.query.returnTo);
+
+    authAttemptStore.set(state, {
+      providerKey: provider.key,
+      nonce,
+      codeVerifier,
+      returnTo,
+      createdAt: Date.now()
+    });
+
+    const authorizeUrl = new URL(discovery.authorization_endpoint);
+    authorizeUrl.searchParams.set("client_id", provider.clientId);
+    authorizeUrl.searchParams.set("redirect_uri", provider.redirectUri);
+    authorizeUrl.searchParams.set("response_type", "code");
+    authorizeUrl.searchParams.set("scope", provider.scope);
+    authorizeUrl.searchParams.set("state", state);
+    authorizeUrl.searchParams.set("nonce", nonce);
+    authorizeUrl.searchParams.set("code_challenge", codeChallenge);
+    authorizeUrl.searchParams.set("code_challenge_method", "S256");
+    if (provider.prompt) {
+      authorizeUrl.searchParams.set("prompt", provider.prompt);
+    }
+
+    res.redirect(authorizeUrl.toString());
+  } catch (error) {
+    console.error("Login start failed", error);
+    res.redirect("/?auth_error=login_start_failed");
+  }
+});
+
+app.get("/api/auth/callback/:provider", async (req, res) => {
+  try {
+    const provider = authConfig.providers.find((candidate) => candidate.key === req.params.provider);
+    const state = String(req.query.state ?? "");
+    const code = String(req.query.code ?? "");
+    const attempt = authAttemptStore.get(state);
+    authAttemptStore.delete(state);
+
+    if (!provider || !attempt || attempt.providerKey !== provider.key || !code) {
+      res.redirect("/?auth_error=invalid_login_response");
+      return;
+    }
+
+    if (Date.now() - attempt.createdAt > 10 * 60 * 1000) {
+      res.redirect("/?auth_error=login_expired");
+      return;
+    }
+
+    const discovery = await resolveProviderDiscovery(provider);
+    const tokenResponse = await fetch(discovery.token_endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: provider.redirectUri,
+        client_id: provider.clientId,
+        client_secret: provider.clientSecret,
+        code_verifier: attempt.codeVerifier
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const detail = await tokenResponse.text();
+      throw new Error(`Token exchange failed: ${tokenResponse.status} ${detail}`);
+    }
+
+    const tokenPayload = await tokenResponse.json();
+    const claims = await verifyIdentityToken(provider, discovery, tokenPayload.id_token, attempt.nonce);
+    const user = normalizeAuthenticatedUser(provider, claims);
+    assertUserIsAllowed(user);
+
+    const sessionId = createToken(48);
+    const expiresAt = Date.now() + authConfig.sessionMaxAgeMs;
+    authSessionStore.set(sessionId, { user, createdAt: Date.now(), expiresAt });
+    setAuthSessionCookie(res, sessionId, expiresAt);
+    res.redirect(attempt.returnTo);
+  } catch (error) {
+    console.error("Login callback failed", error);
+    res.redirect("/?auth_error=login_failed");
+  }
+});
+
+app.post("/api/auth/logout", (req, res) => {
+  const sessionCookie = parseCookies(req.headers.cookie)[authConfig.cookieName];
+  const sessionId = readSignedCookieValue(sessionCookie);
+  if (sessionId) {
+    authSessionStore.delete(sessionId);
+  }
+  clearAuthSessionCookie(res);
+  res.json({ ok: true });
+});
+
+app.use("/api", requireAuthenticatedRequest);
+app.use("/generated", requireAuthenticatedRequest);
 
 app.get("/api/state", async (_req, res) => {
   try {
@@ -243,6 +377,311 @@ function resolveDatabaseConfig() {
     password: process.env.DB_PASSWORD ?? "systemkontroll",
     ssl: process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : false
   };
+}
+
+function resolveAuthConfig() {
+  const baseUrl = String(process.env.AUTH_BASE_URL || process.env.APP_BASE_URL || `http://localhost:${port}`)
+    .trim()
+    .replace(/\/+$/, "");
+  const sessionSecret = String(process.env.AUTH_SESSION_SECRET ?? "").trim();
+  const sessionHours = Math.max(1, Number(process.env.AUTH_SESSION_HOURS ?? 12));
+  const cookieSecure = process.env.AUTH_COOKIE_SECURE
+    ? process.env.AUTH_COOKIE_SECURE === "true"
+    : baseUrl.startsWith("https://");
+  const providers = [
+    resolveMicrosoftProvider(baseUrl),
+    resolveGoogleProvider(baseUrl)
+  ].filter(Boolean);
+  const required = process.env.AUTH_REQUIRED === "true";
+
+  if (required && sessionSecret.length < 32) {
+    throw new Error("AUTH_SESSION_SECRET must be set to at least 32 characters when AUTH_REQUIRED=true.");
+  }
+
+  return {
+    baseUrl,
+    cookieName: "systemkontroll_session",
+    cookieSecure,
+    required,
+    sessionMaxAgeMs: sessionHours * 60 * 60 * 1000,
+    sessionSecret,
+    allowedEmails: parseCsv(process.env.AUTH_ALLOWED_EMAILS).map((value) => value.toLowerCase()),
+    allowedDomains: parseCsv(process.env.AUTH_ALLOWED_EMAIL_DOMAINS).map((value) =>
+      value.toLowerCase().replace(/^@/, "")
+    ),
+    providers
+  };
+}
+
+function resolveMicrosoftProvider(baseUrl) {
+  const clientId = String(process.env.AUTH_MICROSOFT_CLIENT_ID ?? "").trim();
+  const clientSecret = String(process.env.AUTH_MICROSOFT_CLIENT_SECRET ?? "").trim();
+  if (!clientId || !clientSecret) {
+    return null;
+  }
+
+  const tenantId = String(process.env.AUTH_MICROSOFT_TENANT_ID ?? "common").trim() || "common";
+  return {
+    key: "microsoft",
+    label: "Microsoft Entra ID",
+    clientId,
+    clientSecret,
+    redirectUri: `${baseUrl}/api/auth/callback/microsoft`,
+    scope: "openid email profile",
+    discoveryUrl: `https://login.microsoftonline.com/${encodeURIComponent(tenantId)}/v2.0/.well-known/openid-configuration`,
+    validateIssuer: !["common", "organizations", "consumers"].includes(tenantId.toLowerCase())
+  };
+}
+
+function resolveGoogleProvider(baseUrl) {
+  const clientId = String(process.env.AUTH_GOOGLE_CLIENT_ID ?? "").trim();
+  const clientSecret = String(process.env.AUTH_GOOGLE_CLIENT_SECRET ?? "").trim();
+  if (!clientId || !clientSecret) {
+    return null;
+  }
+
+  return {
+    key: "google",
+    label: "Google",
+    clientId,
+    clientSecret,
+    redirectUri: `${baseUrl}/api/auth/callback/google`,
+    scope: "openid email profile",
+    discoveryUrl: "https://accounts.google.com/.well-known/openid-configuration",
+    prompt: "select_account",
+    validateIssuer: true
+  };
+}
+
+async function resolveProviderDiscovery(provider) {
+  if (discoveryCache.has(provider.key)) {
+    return discoveryCache.get(provider.key);
+  }
+
+  const response = await fetch(provider.discoveryUrl);
+  if (!response.ok) {
+    throw new Error(`Could not load OIDC discovery for ${provider.key}.`);
+  }
+
+  const discovery = await response.json();
+  discoveryCache.set(provider.key, discovery);
+  return discovery;
+}
+
+async function verifyIdentityToken(provider, discovery, idToken, nonce) {
+  if (!idToken) {
+    throw new Error("Identity provider did not return an id_token.");
+  }
+
+  const jwks = resolveRemoteJwks(provider, discovery.jwks_uri);
+  const verifyOptions = {
+    audience: provider.clientId,
+    nonce
+  };
+  if (provider.validateIssuer && discovery.issuer) {
+    verifyOptions.issuer = discovery.issuer;
+  }
+
+  const { payload } = await jwtVerify(idToken, jwks, verifyOptions);
+  if (payload.nonce !== nonce) {
+    throw new Error("Identity token nonce did not match login attempt.");
+  }
+  return payload;
+}
+
+function resolveRemoteJwks(provider, jwksUri) {
+  if (!jwksCache.has(provider.key)) {
+    jwksCache.set(provider.key, createRemoteJWKSet(new URL(jwksUri)));
+  }
+  return jwksCache.get(provider.key);
+}
+
+function normalizeAuthenticatedUser(provider, claims) {
+  if (provider.key === "google" && claims.email_verified === false) {
+    throw new Error("Google account email address is not verified.");
+  }
+
+  const email = String(claims.email || claims.preferred_username || claims.upn || "").trim().toLowerCase();
+  const name = String(claims.name || email || "Innlogget bruker").trim();
+  return {
+    provider: provider.key,
+    id: String(claims.sub ?? "").trim(),
+    name,
+    email
+  };
+}
+
+function assertUserIsAllowed(user) {
+  if (!user.email) {
+    throw new Error("Innloggingen mangler e-postadresse.");
+  }
+
+  if (!authConfig.allowedEmails.length && !authConfig.allowedDomains.length) {
+    return;
+  }
+
+  const email = user.email.toLowerCase();
+  const domain = email.split("@").pop();
+  if (authConfig.allowedEmails.includes(email) || authConfig.allowedDomains.includes(domain)) {
+    return;
+  }
+
+  throw new Error(`User ${email} is not allowed to sign in.`);
+}
+
+function requireAuthenticatedRequest(req, res, next) {
+  if (!authConfig.required) {
+    next();
+    return;
+  }
+
+  const session = readAuthSession(req);
+  if (session) {
+    req.authUser = session.user;
+    next();
+    return;
+  }
+
+  res.status(401).json({ error: "authentication_required" });
+}
+
+function readAuthSession(req) {
+  if (!authConfig.required) {
+    return null;
+  }
+
+  const cookieValue = parseCookies(req.headers.cookie)[authConfig.cookieName];
+  const sessionId = readSignedCookieValue(cookieValue);
+  if (!sessionId) {
+    return null;
+  }
+
+  const session = authSessionStore.get(sessionId);
+  if (!session || session.expiresAt <= Date.now()) {
+    authSessionStore.delete(sessionId);
+    return null;
+  }
+
+  return session;
+}
+
+function setAuthSessionCookie(res, sessionId, expiresAt) {
+  const signedValue = signCookieValue(sessionId);
+  res.setHeader("Set-Cookie", serializeCookie(authConfig.cookieName, signedValue, {
+    httpOnly: true,
+    secure: authConfig.cookieSecure,
+    sameSite: "Lax",
+    path: "/",
+    maxAge: Math.max(1, Math.floor((expiresAt - Date.now()) / 1000))
+  }));
+}
+
+function clearAuthSessionCookie(res) {
+  res.setHeader("Set-Cookie", serializeCookie(authConfig.cookieName, "", {
+    httpOnly: true,
+    secure: authConfig.cookieSecure,
+    sameSite: "Lax",
+    path: "/",
+    maxAge: 0
+  }));
+}
+
+function signCookieValue(value) {
+  const signature = createHmac("sha256", authConfig.sessionSecret).update(value).digest("base64url");
+  return `${value}.${signature}`;
+}
+
+function readSignedCookieValue(cookieValue) {
+  if (!cookieValue || !authConfig.sessionSecret) {
+    return "";
+  }
+
+  const [value, signature] = String(cookieValue).split(".");
+  if (!value || !signature) {
+    return "";
+  }
+
+  const expectedSignature = createHmac("sha256", authConfig.sessionSecret).update(value).digest("base64url");
+  const signatureBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+  if (signatureBuffer.length !== expectedBuffer.length || !timingSafeEqual(signatureBuffer, expectedBuffer)) {
+    return "";
+  }
+
+  return value;
+}
+
+function serializeCookie(name, value, options = {}) {
+  const segments = [`${name}=${encodeURIComponent(value)}`];
+  if (options.maxAge !== undefined) {
+    segments.push(`Max-Age=${options.maxAge}`);
+  }
+  if (options.path) {
+    segments.push(`Path=${options.path}`);
+  }
+  if (options.httpOnly) {
+    segments.push("HttpOnly");
+  }
+  if (options.secure) {
+    segments.push("Secure");
+  }
+  if (options.sameSite) {
+    segments.push(`SameSite=${options.sameSite}`);
+  }
+  return segments.join("; ");
+}
+
+function parseCookies(cookieHeader = "") {
+  return Object.fromEntries(
+    String(cookieHeader)
+      .split(";")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const separatorIndex = part.indexOf("=");
+        if (separatorIndex === -1) {
+          return [part, ""];
+        }
+        return [part.slice(0, separatorIndex), decodeURIComponent(part.slice(separatorIndex + 1))];
+      })
+  );
+}
+
+function normalizeLocalReturnTo(value) {
+  const normalized = String(value ?? "/").trim() || "/";
+  if (!normalized.startsWith("/") || normalized.startsWith("//")) {
+    return "/";
+  }
+  return normalized;
+}
+
+function createToken(byteLength = 32) {
+  return randomBytes(byteLength).toString("base64url");
+}
+
+function base64Url(buffer) {
+  return Buffer.from(buffer).toString("base64url");
+}
+
+function parseCsv(value) {
+  return String(value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function purgeExpiredAuthRecords() {
+  const now = Date.now();
+  for (const [state, attempt] of authAttemptStore.entries()) {
+    if (now - attempt.createdAt > 10 * 60 * 1000) {
+      authAttemptStore.delete(state);
+    }
+  }
+  for (const [sessionId, session] of authSessionStore.entries()) {
+    if (session.expiresAt <= now) {
+      authSessionStore.delete(sessionId);
+    }
+  }
 }
 
 function delay(timeoutMs) {

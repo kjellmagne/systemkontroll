@@ -2429,7 +2429,7 @@ function createNewControllerProtocolItem() {
   return {
     id: `CTRL-DRAFT-${suffix}`,
     name: `Ny behandling ${sequence}`,
-    controller: "Hammerfest kommune",
+    controller: "Min organisasjon",
     legalBasis: "Offentlig myndighet",
     status: "Under vurdering",
     privacyRisk: "Middels",

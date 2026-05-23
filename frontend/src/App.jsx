@@ -64,14 +64,12 @@ const bottomNavIcons = {
 };
 
 export default function App() {
-  const currentUser = {
-    name: "Ken Are Johnsen",
-    role: "Organisasjonsadministrator"
-  };
+  const [authSession, setAuthSession] = useState(null);
   const [bootstrap, setBootstrap] = useState(null);
   const [model, setModel] = useState(null);
   const [appState, setAppState] = useState(null);
   const [hash, setHash] = useState(readHash());
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -84,6 +82,44 @@ export default function App() {
   const [selectedOrgNodeId, setSelectedOrgNodeId] = useState("");
   const [systemPrefersDark, setSystemPrefersDark] = useState(false);
   const { dispatchToast } = useToastController(toasterId);
+  const currentUser = useMemo(() => {
+    const authenticatedUser = authSession?.user;
+    return {
+      name: authenticatedUser?.name || authenticatedUser?.email || "Ola Nordmann",
+      role: authenticatedUser?.email || "Organisasjonsadministrator"
+    };
+  }, [authSession]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadAuthSession() {
+      try {
+        const response = await fetch("/api/auth/session");
+        if (!response.ok) {
+          throw new Error("Klarte ikke å kontrollere innlogging.");
+        }
+        const payload = await response.json();
+        if (isMounted) {
+          setAuthSession(payload);
+        }
+      } catch (authError) {
+        if (isMounted) {
+          setError(authError.message ?? "Klarte ikke å kontrollere innlogging.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsAuthLoading(false);
+        }
+      }
+    }
+
+    loadAuthSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     function handleHashChange() {
@@ -98,6 +134,15 @@ export default function App() {
     let isMounted = true;
 
     async function loadData() {
+      if (isAuthLoading) {
+        return;
+      }
+
+      if (authSession?.authRequired && !authSession.authenticated) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         const [bootstrapResponse, modelResponse, stateResponse] = await Promise.all([
@@ -105,6 +150,15 @@ export default function App() {
           fetch("/generated/systemkontroll-model.json"),
           fetch("/api/state")
         ]);
+
+        if (bootstrapResponse.status === 401 || modelResponse.status === 401 || stateResponse.status === 401) {
+          setAuthSession((previousSession) => ({
+            ...(previousSession ?? { authRequired: true, providers: [] }),
+            authenticated: false,
+            user: null
+          }));
+          throw new Error("Du må logge inn på nytt.");
+        }
 
         if (!bootstrapResponse.ok || !modelResponse.ok || !stateResponse.ok) {
           throw new Error("Klarte ikke å laste oppstartsdata.");
@@ -140,7 +194,7 @@ export default function App() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [authSession, isAuthLoading]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
@@ -830,12 +884,42 @@ export default function App() {
     window.location.hash = href.startsWith("#") ? href : `#${href}`;
   }
 
-  if (isLoading) {
+  async function handleLogout() {
+    if (!authSession?.authRequired) {
+      showToast("Innlogging er ikke aktivert.", "info");
+      return;
+    }
+
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      setAuthSession((previousSession) => ({
+        ...(previousSession ?? { authRequired: false, providers: [] }),
+        authenticated: false,
+        user: null
+      }));
+      setBootstrap(null);
+      setModel(null);
+      setAppState(null);
+      showToast("Du er logget ut.", "info");
+    } catch {
+      window.location.reload();
+    }
+  }
+
+  if (isAuthLoading || isLoading) {
     return (
       <FluentProvider theme={fluentTheme}>
         <div className="loadingShell">
           <Spinner size="huge" label="Laster SystemKontroll..." />
         </div>
+      </FluentProvider>
+    );
+  }
+
+  if (authSession?.authRequired && !authSession.authenticated) {
+    return (
+      <FluentProvider theme={fluentTheme}>
+        <LoginPage providers={authSession.providers ?? []} />
       </FluentProvider>
     );
   }
@@ -918,6 +1002,8 @@ export default function App() {
                 onClick={() => {
                   if (item.key === "settings") {
                     navigateTo(item.href);
+                  } else if (item.key === "logout") {
+                    handleLogout();
                   } else {
                     showToast(`${item.label} er ikke implementert ennå.`, "info");
                   }
@@ -991,5 +1077,45 @@ export default function App() {
         </div>
       </div>
     </FluentProvider>
+  );
+}
+
+function LoginPage({ providers }) {
+  const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash || "#/applications"}`;
+
+  return (
+    <div className="loginShell">
+      <Card className="loginPanel">
+        <Avatar name="SystemKontroll" color="brand" size={48} />
+        <div className="loginHeader">
+          <Text as="h1" weight="semibold" size={700}>
+            SystemKontroll
+          </Text>
+          <Text size={300}>
+            Logg inn med organisasjonens identitetsleverandør.
+          </Text>
+        </div>
+        <div className="loginProviderStack">
+          {providers.length ? (
+            providers.map((provider) => (
+              <Button
+                key={provider.key}
+                appearance="primary"
+                size="large"
+                onClick={() => {
+                  window.location.href = `/api/auth/login/${provider.key}?returnTo=${encodeURIComponent(returnTo)}`;
+                }}
+              >
+                Logg inn med {provider.label}
+              </Button>
+            ))
+          ) : (
+            <Text>
+              Ingen innloggingsleverandører er konfigurert.
+            </Text>
+          )}
+        </div>
+      </Card>
+    </div>
   );
 }
