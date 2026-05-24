@@ -88,22 +88,6 @@ structures:
                 placeholder: "Navn"
                 help_text_mode: raw
                 help_text: "Personen som sist kontrollerte applikasjonsinformasjonen."
-          - key: data_processor_agreements
-            label: "Databehandleravtale"
-            help_text: null
-            help_text_status: not_visible_in_supplied_html
-            fields:
-              - key: not_relevant_for_application
-                label: "Ikke aktuelt for applikasjonen"
-                type: boolean
-                required: false
-                control: checkbox
-            collections:
-              - key: processor_agreements
-                label: "Databehandleravtaler"
-                item_type: agreement
-                add_button_label: "Legg til"
-                columns: []
           - key: links
             label: "Relevante lenker"
             help_text: null
@@ -149,6 +133,144 @@ structures:
                 help_text: "Velg Ja dersom applikasjonen har en tilgjengelighetserklæring, ellers velg Nei."
         actions:
           - "Send inn til felles kommunalt applikasjonsregister"
+
+      - key: security
+        label: "Sikkerhet"
+        sections:
+          - key: authentication
+            label: "Autentisering"
+            fields:
+              - key: authentication_method
+                label: "Autentiseringsmetode"
+                type: enum
+                required: false
+                control: select
+                placeholder: "Velg metode"
+                options:
+                  - "Lokal bruker/passord"
+                  - "Entra ID / Azure AD"
+                  - "Google Workspace"
+                  - "ID-porten"
+                  - "SAML"
+                  - "OAuth / OIDC"
+                  - "Annet"
+                help_text_mode: raw
+                help_text: "Hvordan brukere autentiseres inn i applikasjonen."
+              - key: mfa_required
+                label: "Flerfaktorautentisering er påkrevd"
+                type: boolean
+                required: false
+                control: radio
+                options:
+                  - value: true
+                    label: "Ja"
+                  - value: false
+                    label: "Nei"
+                help_text_mode: raw
+                help_text: "Angi om MFA er påkrevd for ordinære brukere eller administratorer."
+              - key: authentication_notes
+                label: "Kommentar"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Beskriv autentisering, MFA-krav og eventuelle unntak"
+          - key: authorization
+            label: "Autorisasjon"
+            fields:
+              - key: authorization_model
+                label: "Autorisasjonsmodell"
+                type: enum
+                required: false
+                control: select
+                placeholder: "Velg modell"
+                options:
+                  - "Rollebasert (RBAC)"
+                  - "Gruppebasert"
+                  - "Attributtbasert (ABAC)"
+                  - "Individuelle rettigheter"
+                  - "Annet"
+                help_text_mode: raw
+                help_text: "Hvordan tilgang og rettigheter styres i applikasjonen."
+              - key: access_review_frequency
+                label: "Tilgangsrevisjon"
+                type: enum
+                required: false
+                control: select
+                placeholder: "Velg frekvens"
+                options:
+                  - "Månedlig"
+                  - "Kvartalsvis"
+                  - "Halvårlig"
+                  - "Årlig"
+                  - "Ved behov"
+                  - "Ikke etablert"
+                help_text_mode: raw
+                help_text: "Hvor ofte tilganger og roller kontrolleres."
+              - key: authorization_notes
+                label: "Kommentar"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Beskriv roller, tilgangsprosesser, administratorrettigheter og avvik"
+          - key: backup_restore
+            label: "Backup / restore"
+            fields:
+              - key: backup_enabled
+                label: "Backup er etablert"
+                type: boolean
+                required: false
+                control: radio
+                options:
+                  - value: true
+                    label: "Ja"
+                  - value: false
+                    label: "Nei"
+              - key: backup_frequency
+                label: "Backupfrekvens"
+                type: enum
+                required: false
+                control: select
+                placeholder: "Velg frekvens"
+                options:
+                  - "Kontinuerlig"
+                  - "Daglig"
+                  - "Ukentlig"
+                  - "Månedlig"
+                  - "Ikke avklart"
+              - key: last_restore_test_date
+                label: "Siste restore-test"
+                type: date
+                required: false
+                control: input_text
+                placeholder: "Velg dato"
+              - key: restore_responsible
+                label: "Ansvarlig for restore"
+                type: text
+                required: false
+                control: input_text
+                placeholder: "Navn eller rolle"
+              - key: backup_restore_notes
+                label: "Kommentar"
+                type: textarea
+                required: false
+                control: textarea
+                placeholder: "Beskriv backup, restore-test, RPO/RTO og avhengigheter"
+          - key: data_processor_agreements
+            label: "Databehandleravtale"
+            help_text: null
+            help_text_status: not_visible_in_supplied_html
+            fields:
+              - key: not_relevant_for_application
+                label: "Ikke aktuelt for applikasjonen"
+                type: boolean
+                required: false
+                control: checkbox
+            collections:
+              - key: processor_agreements
+                label: "Databehandleravtaler"
+                item_type: agreement
+                add_button_label: "Legg til"
+                columns: []
 
       - key: business
         label: "Brukere"
