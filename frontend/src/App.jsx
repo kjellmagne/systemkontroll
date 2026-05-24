@@ -1499,7 +1499,7 @@ export default function App() {
                 currentRecord={currentRecord}
                 currentScreen={currentScreen}
                 currentStructure={currentStructure}
-                dialogState={dialogState}
+                dialogState={isSettingsWindowOpen ? null : dialogState}
                 hashInfo={routeInfo}
                 isDirty={isDirty}
                 isSaving={isSaving}
