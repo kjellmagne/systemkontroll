@@ -271,6 +271,15 @@ structures:
                 item_type: agreement
                 add_button_label: "Legg til"
                 columns: []
+          - key: information_security
+            label: "Sikkerhetsdokumentasjon"
+            help_text: null
+            help_text_status: inferred_from_documentation
+            collections:
+              - key: information_security_items
+                label: "Sikkerhetsdokumentasjon"
+                item_type: document_or_reference
+                add_button_label: "Legg til"
 
       - key: business
         label: "Brukere"
@@ -288,15 +297,6 @@ structures:
                   - "Tjenesteområde"
                   - "Virksomhet"
                   - "Avdeling"
-          - key: information_security
-            label: "Informasjonssikkerhet"
-            help_text: null
-            help_text_status: inferred_from_documentation
-            collections:
-              - key: information_security_items
-                label: "Informasjonssikkerhet"
-                item_type: document_or_reference
-                add_button_label: "Legg til"
           - key: criticality
             label: "Kritikalitet"
             fields:
