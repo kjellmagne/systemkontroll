@@ -2409,10 +2409,10 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
     { value: "disabled", label: "Deaktivert" }
   ];
   const settingsNavItems = [
-    { key: "catalogs", label: "Registere", description: "Verdier og merkelapper", icon: TagRegular },
-    { key: "users", label: "Brukere", description: "Tilgang og roller", icon: PeopleRegular },
-    { key: "apiKeys", label: "API-nøkler", description: "Integrasjoner og tokens", icon: ShieldRegular },
-    { key: "themes", label: "Tema", description: "Utseende og farger", icon: SparkleRegular }
+    { key: "catalogs", label: "Registere", description: "Verdier og merkelapper" },
+    { key: "users", label: "Brukere", description: "Tilgang og roller" },
+    { key: "apiKeys", label: "API-nøkler", description: "Integrasjoner og tokens" },
+    { key: "themes", label: "Tema", description: "Utseende og farger" }
   ];
 
   React.useEffect(() => {
@@ -3109,9 +3109,6 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
               className={`settingsSideNavItem ${activeSettingsTab === item.key ? "isActive" : ""}`}
               onClick={() => setActiveSettingsTab(item.key)}
             >
-              <span className="settingsSideNavIcon" aria-hidden="true">
-                <item.icon />
-              </span>
               <span className="settingsSideNavCopy">
                 <span>{item.label}</span>
                 <small>{item.description}</small>
