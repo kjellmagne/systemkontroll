@@ -1282,7 +1282,7 @@ export default function App() {
     setDialogState(null);
   }
 
-  function submitDialog() {
+  async function submitDialog() {
     if (!dialogState?.onSubmit) {
       return;
     }
@@ -1293,7 +1293,7 @@ export default function App() {
       return;
     }
 
-    const result = dialogState.onSubmit(dialogState.draft);
+    const result = await dialogState.onSubmit(dialogState.draft);
     if (result === false) {
       return;
     }

@@ -402,8 +402,10 @@ body:has(.shell[data-appearance="dark"]) {
 }
 
 .settingsWindowBody {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   padding: 0;
   background: var(--app-bg, #f3f2f1);
 }
@@ -684,6 +686,8 @@ body:has(.shell[data-appearance="dark"]) {
   display: flex;
   flex-direction: column;
   gap: 0;
+  flex: 1;
+  height: 100%;
   min-height: 0;
 }
 
@@ -701,6 +705,7 @@ body:has(.shell[data-appearance="dark"]) {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   min-height: 0;
+  overflow: hidden;
   flex: 1;
 }
 
@@ -708,6 +713,8 @@ body:has(.shell[data-appearance="dark"]) {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  align-self: stretch;
+  overflow: visible;
   padding: 14px;
   border-right: 1px solid var(--surface-border);
   background: color-mix(in srgb, var(--surface-card-subtle) 82%, var(--surface-card) 18%);
@@ -1560,6 +1567,13 @@ body:has(.shell[data-appearance="dark"]) {
   max-width: 100%;
 }
 
+.dialogDescription {
+  display: block;
+  max-width: 64ch;
+  margin-bottom: 16px;
+  color: var(--text-muted);
+}
+
 .dialogFieldItem {
   min-width: 0;
 }
@@ -1592,6 +1606,12 @@ body:has(.shell[data-appearance="dark"]) {
 
 .dialogFieldStack textarea {
   min-height: 128px;
+}
+
+.dialogReadonlyTextarea textarea {
+  min-height: 112px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
 }
 
 .dialogTagPicker {

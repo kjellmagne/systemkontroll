@@ -1213,6 +1213,9 @@ export function PageRenderer({
           <DialogBody className="editorDialogBody">
             <DialogTitle>{dialogState?.title}</DialogTitle>
             <DialogContent className="editorDialogContent">
+              {dialogState?.description ? (
+                <Body1 className="dialogDescription">{dialogState.description}</Body1>
+              ) : null}
               <div className="dialogFieldStack">
                 {dialogState?.fields?.map((field) => (
                   <Field key={field.key} label={field.label} className={getDialogFieldClassName(field)}>
@@ -1711,6 +1714,7 @@ export function PageRenderer({
                       />
                     ) : field.type === "select" ? (
                       <Dropdown
+                        value={resolveDialogOptions(field).find((option) => String(option.value) === String(dialogState.draft?.[field.key]))?.label ?? ""}
                         selectedOptions={dialogState.draft?.[field.key] ? [String(dialogState.draft[field.key])] : []}
                         onOptionSelect={(_event, data) => updateDialogField(field.key, data.optionValue ?? "")}
                       >
@@ -1720,6 +1724,25 @@ export function PageRenderer({
                           </Option>
                         ))}
                       </Dropdown>
+                    ) : field.type === "checkbox" ? (
+                      <Checkbox
+                        checked={Boolean(dialogState.draft?.[field.key])}
+                        label={field.checkboxLabel ?? field.label}
+                        onChange={(_event, data) => updateDialogField(field.key, Boolean(data.checked))}
+                      />
+                    ) : field.type === "password" ? (
+                      <Input
+                        type="password"
+                        value={dialogState.draft?.[field.key] ?? ""}
+                        onChange={(event) => updateDialogField(field.key, event.target.value)}
+                      />
+                    ) : field.type === "readonly_textarea" ? (
+                      <Textarea
+                        className="dialogReadonlyTextarea"
+                        readOnly
+                        resize="vertical"
+                        value={dialogState.draft?.[field.key] ?? ""}
+                      />
                     ) : (
                       <Input
                         value={dialogState.draft?.[field.key] ?? ""}
@@ -1731,12 +1754,16 @@ export function PageRenderer({
               </div>
             </DialogContent>
             <DialogActions>
-              <Button appearance="secondary" onClick={closeDialog}>
-                Avbryt
-              </Button>
-              <Button appearance="primary" onClick={submitDialog}>
-                Lagre
-              </Button>
+              {dialogState?.hideCancel ? null : (
+                <Button appearance="secondary" onClick={closeDialog}>
+                  {dialogState?.cancelLabel ?? "Avbryt"}
+                </Button>
+              )}
+              {dialogState?.hideSubmit ? null : (
+                <Button appearance="primary" onClick={submitDialog}>
+                  {dialogState?.submitLabel ?? "Lagre"}
+                </Button>
+              )}
             </DialogActions>
           </DialogBody>
         </DialogSurface>
@@ -2313,8 +2340,6 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   const [passwordDraft, setPasswordDraft] = React.useState("");
   const [apiKeys, setApiKeys] = React.useState([]);
   const [isApiKeysLoading, setIsApiKeysLoading] = React.useState(false);
-  const [apiKeyForm, setApiKeyForm] = React.useState({ name: "", role: "viewer" });
-  const [createdApiToken, setCreatedApiToken] = React.useState("");
   const [inlineCatalogAdd, setInlineCatalogAdd] = React.useState({ key: null, value: "", description: "", color: "blue" });
   const inlineCatalogTriggerRefs = React.useRef({});
   const inlineCatalogPanelRef = React.useRef(null);
@@ -2374,6 +2399,15 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   const [adminAccessStatus, setAdminAccessStatus] = React.useState(isSessionAdmin ? "granted" : "checking");
   const isUserAdmin = isSessionAdmin || adminAccessStatus === "granted";
   const selectedUser = users.find((user) => user.id === selectedUserId) ?? null;
+  const roleOptions = [
+    { value: "admin", label: "Administrator" },
+    { value: "editor", label: "Redaktør" },
+    { value: "viewer", label: "Lesetilgang" }
+  ];
+  const statusOptions = [
+    { value: "active", label: "Aktiv" },
+    { value: "disabled", label: "Deaktivert" }
+  ];
   const settingsNavItems = [
     { key: "catalogs", label: "Registere", description: "Verdier og merkelapper", icon: TagRegular },
     { key: "users", label: "Brukere", description: "Tilgang og roller", icon: PeopleRegular },
@@ -2445,10 +2479,14 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   }
 
   async function saveUser() {
+    if (!selectedUser) {
+      openNewUserDialog();
+      return;
+    }
+
     try {
-      const isEditing = Boolean(selectedUser);
-      const response = await fetch(isEditing ? `/api/users/${selectedUser.id}` : "/api/users", {
-        method: isEditing ? "PUT" : "POST",
+      const response = await fetch(`/api/users/${selectedUser.id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userForm)
       });
@@ -2463,6 +2501,38 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
       showToast("Bruker lagret.");
     } catch (error) {
       showToast(error.message ?? "Brukeren kunne ikke lagres.", "error");
+    }
+  }
+
+  async function createUserFromDialog(draft) {
+    try {
+      const payload = {
+        ...draft,
+        localEnabled: Boolean(draft.localEnabled),
+        password: String(draft.password ?? "")
+      };
+      if (payload.localEnabled && payload.password.length < 10) {
+        showToast("Lokale brukere må ha passord på minst 10 tegn.", "error");
+        return false;
+      }
+
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        const responsePayload = await response.json().catch(() => ({}));
+        throw new Error(responsePayload.detail ?? "Brukeren kunne ikke lagres.");
+      }
+      const responsePayload = await response.json();
+      await loadUsers();
+      setSelectedUserId(responsePayload.user?.id ?? "");
+      showToast("Bruker opprettet.");
+      return true;
+    } catch (error) {
+      showToast(error.message ?? "Brukeren kunne ikke lagres.", "error");
+      return false;
     }
   }
 
@@ -2488,10 +2558,23 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
     }
   }
 
-  function startNewUser() {
-    setSelectedUserId("");
-    setUserForm(createBlankUserForm());
-    setPasswordDraft("");
+  function openNewUserDialog() {
+    openDialog({
+      title: "Ny bruker",
+      description: "Lokale brukere kan logge inn med brukernavn eller e-post. Entra og Google matcher brukeren på e-postadresse.",
+      initialValue: createBlankUserForm(),
+      submitLabel: "Opprett bruker",
+      fields: [
+        { key: "displayName", label: "Navn", required: true },
+        { key: "email", label: "E-post", required: true },
+        { key: "username", label: "Brukernavn" },
+        { key: "role", label: "Rolle", type: "select", options: roleOptions },
+        { key: "status", label: "Status", type: "select", options: statusOptions },
+        { key: "localEnabled", label: "Lokal innlogging", checkboxLabel: "Tillat lokal innlogging", type: "checkbox" },
+        { key: "password", label: "Midlertidig passord", type: "password" }
+      ],
+      onSubmit: createUserFromDialog
+    });
   }
 
   async function loadApiKeys() {
@@ -2516,24 +2599,54 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
   }
 
   async function createApiKey() {
+    openNewApiKeyDialog();
+  }
+
+  async function createApiKeyFromDialog(draft) {
     try {
       const response = await fetch("/api/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(apiKeyForm)
+        body: JSON.stringify({
+          name: String(draft.name ?? "").trim(),
+          role: String(draft.role ?? "viewer").trim()
+        })
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
         throw new Error(payload.detail ?? "API-nøkkelen kunne ikke opprettes.");
       }
       const payload = await response.json();
-      setCreatedApiToken(payload.token ?? "");
-      setApiKeyForm({ name: "", role: "viewer" });
       await loadApiKeys();
       showToast("API-nøkkel opprettet.");
+      openDialog({
+        title: "Ny API-nøkkel er opprettet",
+        description: "Kopier nøkkelen nå. Den vises ikke igjen etter at dialogen lukkes.",
+        initialValue: { token: payload.token ?? "" },
+        submitLabel: "Lukk",
+        hideCancel: true,
+        fields: [{ key: "token", label: "Token", type: "readonly_textarea" }],
+        onSubmit: () => true
+      });
+      return false;
     } catch (error) {
       showToast(error.message ?? "API-nøkkelen kunne ikke opprettes.", "error");
+      return false;
     }
+  }
+
+  function openNewApiKeyDialog() {
+    openDialog({
+      title: "Ny API-nøkkel",
+      description: "Nøkkelen vises bare én gang. Bruk den som Bearer-token mot OpenAPI-endepunktene.",
+      initialValue: { name: "", role: "viewer" },
+      submitLabel: "Opprett API-nøkkel",
+      fields: [
+        { key: "name", label: "Navn", required: true },
+        { key: "role", label: "Rolle", type: "select", options: roleOptions }
+      ],
+      onSubmit: createApiKeyFromDialog
+    });
   }
 
   async function revokeApiKey(keyId) {
@@ -2564,45 +2677,19 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
     return (
       <div className="apiKeysGrid">
         <Card className="settingsCard" appearance="filled-alternative">
-          <div className="headerStack compact">
-            <Title3>Ny API-nøkkel</Title3>
-            <Body1>Nøkkelen vises bare én gang. Bruk den som Bearer-token mot OpenAPI-endepunktene.</Body1>
-          </div>
-          <div className="userAdminForm">
-            <Field label="Navn">
-              <Input value={apiKeyForm.name} onChange={(event) => setApiKeyForm((current) => ({ ...current, name: event.target.value }))} />
-            </Field>
-            <Field label="Rolle">
-              <Dropdown value={roleLabel(apiKeyForm.role)} selectedOptions={[apiKeyForm.role]} onOptionSelect={(_event, data) => setApiKeyForm((current) => ({ ...current, role: data.optionValue }))}>
-                <Option value="admin">Administrator</Option>
-                <Option value="editor">Redaktør</Option>
-                <Option value="viewer">Lesetilgang</Option>
-              </Dropdown>
-            </Field>
-            <Button appearance="primary" onClick={createApiKey}>
-              Opprett API-nøkkel
-            </Button>
-            {createdApiToken ? (
-              <div className="apiTokenCallout">
-                <div className="headerStack compact">
-                  <Text weight="semibold">Ny nøkkel er opprettet</Text>
-                  <Text size={200}>Kopier den nå. Den vises ikke igjen etter at vinduet lukkes.</Text>
-                </div>
-                <Textarea className="apiTokenText" readOnly value={createdApiToken} />
-              </div>
-            ) : null}
-          </div>
-        </Card>
-
-        <Card className="settingsCard" appearance="filled-alternative">
           <div className="cardHeader">
             <div className="headerStack compact">
               <Title3>Aktive og tilbakekalte nøkler</Title3>
               <Body1>{isApiKeysLoading ? "Laster API-nøkler..." : `${apiKeys.length} nøkler registrert`}</Body1>
             </div>
-            <Button appearance="secondary" onClick={loadApiKeys}>
-              Oppdater
-            </Button>
+            <div className="inlineActionGroup">
+              <Button appearance="secondary" onClick={loadApiKeys}>
+                Oppdater
+              </Button>
+              <Button appearance="primary" icon={<AddRegular />} onClick={createApiKey}>
+                Ny API-nøkkel
+              </Button>
+            </div>
           </div>
           <Table size="small" className="userAdminTable">
             <TableHeader>
@@ -2662,7 +2749,7 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
               <Title3>Brukere</Title3>
               <Body1>{isUsersLoading ? "Laster brukere..." : `${users.length} brukere registrert`}</Body1>
             </div>
-            <Button appearance="secondary" icon={<AddRegular />} onClick={startNewUser}>
+            <Button appearance="primary" icon={<AddRegular />} onClick={openNewUserDialog}>
               Ny bruker
             </Button>
           </div>
@@ -2699,9 +2786,10 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
           </Table>
         </Card>
 
+        {selectedUser ? (
         <Card className="settingsCard userAdminEditor" appearance="filled-alternative">
           <div className="headerStack compact">
-            <Title3>{selectedUser ? "Rediger bruker" : "Ny bruker"}</Title3>
+            <Title3>Rediger bruker</Title3>
             <Body1>Lokale brukere kan logge inn med brukernavn eller e-post. Entra og Google matcher brukeren på e-postadresse.</Body1>
           </div>
           <div className="userAdminForm">
@@ -2732,30 +2820,29 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
               label="Tillat lokal innlogging"
               onChange={(_event, data) => updateUserForm("localEnabled", Boolean(data.checked))}
             />
-            {!selectedUser && userForm.localEnabled ? (
-              <Field label="Midlertidig passord">
-                <Input type="password" value={userForm.password} onChange={(event) => updateUserForm("password", event.target.value)} />
-              </Field>
-            ) : null}
             <Button appearance="primary" onClick={saveUser}>
               Lagre bruker
             </Button>
           </div>
 
-          {selectedUser ? (
-            <>
-              <Divider />
-              <div className="userAdminForm">
-                <Field label="Nytt lokalt passord">
-                  <Input type="password" value={passwordDraft} onChange={(event) => setPasswordDraft(event.target.value)} />
-                </Field>
-                <Button appearance="secondary" disabled={!passwordDraft} onClick={resetUserPassword}>
-                  Oppdater passord
-                </Button>
-              </div>
-            </>
-          ) : null}
+          <Divider />
+          <div className="userAdminForm">
+            <Field label="Nytt lokalt passord">
+              <Input type="password" value={passwordDraft} onChange={(event) => setPasswordDraft(event.target.value)} />
+            </Field>
+            <Button appearance="secondary" disabled={!passwordDraft} onClick={resetUserPassword}>
+              Oppdater passord
+            </Button>
+          </div>
         </Card>
+        ) : (
+          <div className="settingsEmptyState">
+            <div className="headerStack compact">
+              <Title3>Velg bruker</Title3>
+              <Body1>Velg en bruker i listen for å redigere, eller opprett en ny bruker via knappen over.</Body1>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
