@@ -119,7 +119,10 @@ body:has(.shell[data-appearance="dark"]) {
   padding: 24px 16px 20px;
   background: color-mix(in srgb, var(--surface-card-subtle) 82%, var(--surface-card) 18%);
   border-right: 1px solid var(--surface-border);
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  min-height: 0;
+  overflow: hidden;
   position: sticky;
   top: 0;
 }
@@ -147,6 +150,9 @@ body:has(.shell[data-appearance="dark"]) {
 .sidebarGroups {
   gap: 24px;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .sidebarSection,
@@ -193,9 +199,11 @@ body:has(.shell[data-appearance="dark"]) {
 .sidebarBottom {
   display: flex;
   flex-direction: column;
+  flex: 0 0 auto;
   padding-top: 16px;
   border-top: 1px solid var(--surface-border);
   margin-top: auto;
+  background: color-mix(in srgb, var(--surface-card-subtle) 82%, var(--surface-card) 18%);
 }
 
 .sectionLabel,
@@ -2972,8 +2980,16 @@ body:has(.shell[data-appearance="dark"]) {
   .sidebar {
     border-right: none;
     border-bottom: 1px solid var(--surface-border);
+    height: auto;
+    max-height: none;
     min-height: auto;
+    overflow: visible;
     position: static;
+  }
+
+  .sidebarGroups {
+    overflow: visible;
+    padding-right: 0;
   }
 
   .orgWorkspace,
