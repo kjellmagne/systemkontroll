@@ -2409,10 +2409,10 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
     { value: "disabled", label: "Deaktivert" }
   ];
   const settingsNavItems = [
-    { key: "catalogs", label: "Registere", description: "Verdier og merkelapper" },
-    { key: "users", label: "Brukere", description: "Tilgang og roller" },
-    { key: "apiKeys", label: "API-nøkler", description: "Integrasjoner og tokens" },
-    { key: "themes", label: "Tema", description: "Utseende og farger" }
+    { key: "catalogs", label: "Registere" },
+    { key: "users", label: "Brukere" },
+    { key: "apiKeys", label: "API-nøkler" },
+    { key: "themes", label: "Tema" }
   ];
 
   React.useEffect(() => {
@@ -3102,19 +3102,24 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
     <div className="settingsPageStack">
       <div className="settingsWorkspace">
         <nav className="settingsSideNav" aria-label="Innstillinger">
-          {settingsNavItems.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className={`settingsSideNavItem ${activeSettingsTab === item.key ? "isActive" : ""}`}
-              onClick={() => setActiveSettingsTab(item.key)}
-            >
-              <span className="settingsSideNavCopy">
-                <span>{item.label}</span>
-                <small>{item.description}</small>
-              </span>
-            </button>
-          ))}
+          <div className="sidebarSection">
+            <Text size={200} weight="medium" className="sectionLabel">
+              Innstillinger
+            </Text>
+            <div className="navStack">
+              {settingsNavItems.map((item) => (
+                <Button
+                  key={item.key}
+                  appearance="subtle"
+                  size="large"
+                  className={`navButton ${activeSettingsTab === item.key ? "isActive" : ""}`}
+                  onClick={() => setActiveSettingsTab(item.key)}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </div>
+          </div>
         </nav>
         <div className="settingsContentPanel">
           {activeSettingsTab === "catalogs" ? (
