@@ -3968,15 +3968,15 @@ function ApplicationRevisionsSection({ currentRecord, currentStructure, section 
       }),
     [currentRecord?.collectionValues?.application_revisions]
   );
-  const [expandedRevisionId, setExpandedRevisionId] = React.useState(revisions[0]?.id ?? "");
+  const [expandedRevisionId, setExpandedRevisionId] = React.useState("");
   const fieldGroups = React.useMemo(() => buildRevisionFieldGroups(currentStructure), [currentStructure]);
   const collectionGroups = React.useMemo(() => buildRevisionCollectionGroups(currentStructure), [currentStructure]);
 
   React.useEffect(() => {
-    if (expandedRevisionId && revisions.some((revision) => revision.id === expandedRevisionId)) {
+    if (!expandedRevisionId || revisions.some((revision) => revision.id === expandedRevisionId)) {
       return;
     }
-    setExpandedRevisionId(revisions[0]?.id ?? "");
+    setExpandedRevisionId("");
   }, [expandedRevisionId, revisions]);
 
   function renderFieldGroup(group, snapshotFields) {
@@ -4057,6 +4057,15 @@ function ApplicationRevisionsSection({ currentRecord, currentStructure, section 
             <Title3>{section.label}</Title3>
           </div>
         </div>
+        {revisions.length ? (
+          <Button
+            appearance="secondary"
+            disabled={!expandedRevisionId}
+            onClick={() => setExpandedRevisionId("")}
+          >
+            Skjul alle
+          </Button>
+        ) : null}
       </div>
 
       {revisions.length ? (
