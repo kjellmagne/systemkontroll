@@ -597,6 +597,7 @@ export const mockRecords = {
       system_responsible: "Ola Nordmann",
       system_owner: "HR-Avdelingen (HR-DIR)",
       last_revised_date: "2025-11-18",
+      last_revised_by: "Ola Nordmann",
       not_relevant_for_application: false,
       accessibility_statement_required: true,
       has_accessibility_statement: false,
@@ -678,8 +679,35 @@ export const mockRecords = {
         { key: "scalability", label: "Skalerbarhet", score: 4, comment: "Løsningen tåler forventet vekst i brukere og datavolum." }
       ],
       historical_reviews: [
-        { Kriterie: "Sikkerhet", Poengsum: "4", Kommentar: "Ny revisjon gjennomført uten avvik.", Dato: "2025-11-18" },
+        { Kriterie: "Sikkerhet", Poengsum: "4", Kommentar: "Vurdering gjennomført uten avvik.", Dato: "2025-11-18" },
         { Kriterie: "Tilgjengelighet", Poengsum: "2", Kommentar: "Tiltak planlagt for å lukke dokumentasjonsgap.", Dato: "2025-11-18" }
+      ],
+      application_revisions: [
+        {
+          id: "REV-2025-11-18-001",
+          revisionNumber: 1,
+          date: "2025-11-18",
+          revisedBy: "Ola Nordmann",
+          snapshot: {
+            fieldValues: {
+              name: "Visma Ent. HRM",
+              version: "12.4",
+              vendor: "Visma Norge AS",
+              system_owner: "HR-Avdelingen (HR-DIR)",
+              system_responsible: "Ola Nordmann",
+              criticality: "Høy",
+              annual_cost_ex_vat: "1450000",
+              annual_indirect_cost_ex_vat: "260000",
+              acquisition_cost: "3150000",
+              technical_operations_supplier: "Visma Norge AS",
+              supplier_contact_info: "Supportportal og dedikert kundekontakt",
+              lifecycle_status: "I drift",
+              last_revised_date: "2025-11-18",
+              last_revised_by: "Ola Nordmann"
+            },
+            collectionValues: {}
+          }
+        }
       ],
       application_experts: [
         { Navn: "Ingrid Nilsen", "E-post": "ingrid.nilsen@example.no" },
@@ -935,7 +963,7 @@ export const screenRegistry = [
     navKey: "application",
     title: "Applikasjoner",
     searchPlaceholder: "Søk i applikasjoner, leverandør eller systemeier...",
-    description: "Oversikt over registrerte applikasjoner med status, kritikalitet, eierskap og siste revisjon.",
+    description: "Oversikt over registrerte applikasjoner med status, kritikalitet, eierskap og siste kontroll.",
     actions: [{ label: "Ny applikasjon", icon: "add", actionId: "add-application" }],
     columns: [
       { key: "name", label: "Navn" },
@@ -943,7 +971,7 @@ export const screenRegistry = [
       { key: "version", label: "Versjon" },
       { key: "status", label: "Status" },
       { key: "criticality", label: "Kritikalitet" },
-      { key: "lastRevised", label: "Sist revidert" },
+      { key: "lastRevised", label: "Sist kontrollert" },
       { key: "lastUpdated", label: "Sist oppdatert" }
     ]
   },
@@ -1047,6 +1075,7 @@ export const screenRegistry = [
       standards: { span: 12, icon: "code" },
       review_criteria: { span: 12, icon: "rule" },
       historical_reviews: { span: 12, icon: "history" },
+      application_revisions: { span: 12, icon: "history" },
       financial_overview: { span: 12, icon: "payments" },
       operations_overview: { span: 12, icon: "dns", tone: "accent" },
       application_experts: { span: 12, icon: "group" },

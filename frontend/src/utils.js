@@ -1952,10 +1952,25 @@ function normalizeApplicationRevisionMetadata(record) {
   }
 
   record.fieldValues = record.fieldValues ?? {};
-  const revisionRows = ensureCollectionArray(record, "historical_reviews");
+  const revisionRows = ensureCollectionArray(record, "application_revisions");
+  if (!revisionRows.length && record.fieldValues.last_revised_date) {
+    const collectionValues = structuredClone(record.collectionValues ?? {});
+    delete collectionValues.application_revisions;
+    revisionRows.push({
+      id: `REV-${String(record.id ?? record.recordKey ?? "application").trim() || "application"}-${record.fieldValues.last_revised_date}-001`,
+      revisionNumber: 1,
+      date: record.fieldValues.last_revised_date,
+      revisedBy: record.fieldValues.last_revised_by || record.meta?.lastModifiedBy || "",
+      snapshot: {
+        fieldValues: structuredClone(record.fieldValues),
+        collectionValues,
+        meta: structuredClone(record.meta ?? {})
+      }
+    });
+  }
   if (!record.fieldValues.last_revised_date) {
     const latestRevisionDate = revisionRows
-      .map((row) => coerceTrimmedString(row?.Dato ?? row?.date, ""))
+      .map((row) => coerceTrimmedString(row?.date ?? row?.Dato, ""))
       .filter(Boolean)
       .sort()
       .at(-1);

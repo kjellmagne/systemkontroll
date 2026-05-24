@@ -2292,6 +2292,7 @@ function DetailPage({ appState, bootstrap, currentRecord, currentScreen, current
               appState={appState}
               bootstrap={bootstrap}
               currentRecord={currentRecord}
+              currentStructure={currentStructure}
               openDialog={openDialog}
               section={section}
               showToast={showToast}
@@ -2319,6 +2320,7 @@ function AdminSectionsPage({ appState, bootstrap, currentRecord, currentStructur
               appState={appState}
               bootstrap={bootstrap}
               currentRecord={currentRecord}
+              currentStructure={currentStructure}
               openDialog={openDialog}
               section={section}
               showToast={showToast}
@@ -3902,7 +3904,211 @@ function PageHeader({ record, screen, onAction }) {
   );
 }
 
-function SectionCard({ appState, bootstrap, currentRecord, openDialog, section, showToast, updateDraft }) {
+function revisionValueIsVisible(value) {
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+  if (value && typeof value === "object") {
+    return Object.keys(value).length > 0;
+  }
+  return String(value ?? "").trim() !== "";
+}
+
+function renderRevisionValue(value) {
+  if (typeof value === "boolean") {
+    return value ? "Ja" : "Nei";
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => renderRevisionValue(item)).join(", ");
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value)
+      .map(([key, itemValue]) => `${key}: ${renderRevisionValue(itemValue)}`)
+      .join(" · ");
+  }
+  return String(value ?? "").trim() || "Ikke satt";
+}
+
+function buildRevisionFieldGroups(currentStructure) {
+  return (currentStructure?.tabs ?? []).flatMap((tab) =>
+    (tab.sections ?? [])
+      .filter((section) => Array.isArray(section.fields) && section.fields.length)
+      .map((section) => ({
+        key: `${tab.key}-${section.key}`,
+        label: section.label,
+        fields: section.fields
+      }))
+  );
+}
+
+function buildRevisionCollectionGroups(currentStructure) {
+  return (currentStructure?.tabs ?? []).flatMap((tab) =>
+    (tab.sections ?? [])
+      .flatMap((section) =>
+        (section.collections ?? [])
+          .filter((collection) => collection.key !== "application_revisions")
+          .map((collection) => ({
+            key: collection.key,
+            label: collection.label,
+            columns: collection.columns ?? []
+          }))
+      )
+  );
+}
+
+function ApplicationRevisionsSection({ currentRecord, currentStructure, section }) {
+  const revisions = React.useMemo(
+    () =>
+      [...(currentRecord?.collectionValues?.application_revisions ?? [])].sort((left, right) => {
+        const numberDifference = Number(right?.revisionNumber ?? 0) - Number(left?.revisionNumber ?? 0);
+        if (numberDifference) {
+          return numberDifference;
+        }
+        return String(right?.date ?? "").localeCompare(String(left?.date ?? ""));
+      }),
+    [currentRecord?.collectionValues?.application_revisions]
+  );
+  const [expandedRevisionId, setExpandedRevisionId] = React.useState(revisions[0]?.id ?? "");
+  const fieldGroups = React.useMemo(() => buildRevisionFieldGroups(currentStructure), [currentStructure]);
+  const collectionGroups = React.useMemo(() => buildRevisionCollectionGroups(currentStructure), [currentStructure]);
+
+  React.useEffect(() => {
+    if (expandedRevisionId && revisions.some((revision) => revision.id === expandedRevisionId)) {
+      return;
+    }
+    setExpandedRevisionId(revisions[0]?.id ?? "");
+  }, [expandedRevisionId, revisions]);
+
+  function renderFieldGroup(group, snapshotFields) {
+    const visibleFields = group.fields.filter((field) => revisionValueIsVisible(snapshotFields[field.key]));
+    if (!visibleFields.length) {
+      return null;
+    }
+
+    return (
+      <div key={group.key} className="applicationRevisionSection">
+        <Text weight="semibold">{group.label}</Text>
+        <div className="applicationRevisionGrid">
+          {visibleFields.map((field) => (
+            <div key={field.key} className="applicationRevisionField">
+              <Text size={200}>{field.label}</Text>
+              <Text weight="medium">{renderRevisionValue(snapshotFields[field.key])}</Text>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function renderCollectionGroup(group, snapshotCollections) {
+    const rows = snapshotCollections[group.key];
+    if (!revisionValueIsVisible(rows)) {
+      return null;
+    }
+
+    const normalizedRows = Array.isArray(rows) ? rows : [rows];
+    const objectRows = normalizedRows.filter((row) => row && typeof row === "object" && !Array.isArray(row));
+    const columns = group.columns.length
+      ? group.columns
+      : Array.from(new Set(objectRows.flatMap((row) => Object.keys(row)))).slice(0, 8);
+
+    return (
+      <div key={group.key} className="applicationRevisionSection">
+        <Text weight="semibold">{group.label}</Text>
+        {objectRows.length && columns.length ? (
+          <div className="applicationRevisionTableWrap">
+            <table className="applicationRevisionTable">
+              <thead>
+                <tr>
+                  {columns.map((column) => (
+                    <th key={column}>{column}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {objectRows.map((row, rowIndex) => (
+                  <tr key={`${group.key}-${rowIndex}`}>
+                    {columns.map((column) => (
+                      <td key={column}>{renderRevisionValue(row[column])}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="applicationRevisionTags">
+            {normalizedRows.map((row, rowIndex) => (
+              <Tag key={`${group.key}-${rowIndex}`} className="labelChip">
+                {renderRevisionValue(row)}
+              </Tag>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <Card className={`sectionCard sectionCard--${section.key}`} appearance="filled-alternative">
+      <div className="cardHeader">
+        <div className="sectionHeaderCopy">
+          <div className="cardTitleRow">
+            <Title3>{section.label}</Title3>
+          </div>
+        </div>
+      </div>
+
+      {revisions.length ? (
+        <div className="applicationRevisionList">
+          {revisions.map((revision) => {
+            const isExpanded = expandedRevisionId === revision.id;
+            const snapshotFields = revision?.snapshot?.fieldValues ?? {};
+            const snapshotCollections = revision?.snapshot?.collectionValues ?? {};
+
+            return (
+              <div key={revision.id ?? `${revision.date}-${revision.revisionNumber}`} className="applicationRevisionCard">
+                <button
+                  type="button"
+                  className="applicationRevisionHeader"
+                  onClick={() => setExpandedRevisionId(isExpanded ? "" : revision.id)}
+                >
+                  <span>
+                    <Text weight="semibold">Revisjon {revision.revisionNumber ?? ""}</Text>
+                    <Text size={200}>{revision.date ?? "Uten dato"}</Text>
+                  </span>
+                  <span className="applicationRevisionMeta">
+                    <Text size={200}>{revision.revisedBy ?? "Ukjent"}</Text>
+                    <ChevronDownRegular className={isExpanded ? "isExpanded" : ""} />
+                  </span>
+                </button>
+
+                {isExpanded ? (
+                  <div className="applicationRevisionDetails">
+                    {fieldGroups.map((group) => renderFieldGroup(group, snapshotFields))}
+                    {collectionGroups.map((group) => renderCollectionGroup(group, snapshotCollections))}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="settingsEmptyState">
+          <div className="headerStack compact">
+            <Body1>Ingen revisjoner lagret ennå.</Body1>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function SectionCard({ appState, bootstrap, currentRecord, currentStructure, openDialog, section, showToast, updateDraft }) {
+  if (currentRecord?.entityKey === "application" && section.key === "application_revisions") {
+    return <ApplicationRevisionsSection currentRecord={currentRecord} currentStructure={currentStructure} section={section} />;
+  }
+
   const fieldValues = currentRecord.fieldValues ?? {};
   const collectionValues = currentRecord.collectionValues ?? {};
   const headerFields = (section.fields ?? []).filter((field) => field.control === "checkbox");

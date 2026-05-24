@@ -829,6 +829,134 @@ body:has(.shell[data-appearance="dark"]) {
   width: 100%;
 }
 
+.applicationRevisionList,
+.applicationRevisionDetails,
+.applicationRevisionSection {
+  display: flex;
+  flex-direction: column;
+}
+
+.applicationRevisionList {
+  gap: 12px;
+}
+
+.applicationRevisionCard {
+  overflow: hidden;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: var(--surface-card);
+}
+
+.applicationRevisionHeader {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  border: 0;
+  padding: 14px 16px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.applicationRevisionHeader:hover,
+.applicationRevisionHeader:focus-visible {
+  background: var(--hover-subtle);
+  outline: none;
+}
+
+.applicationRevisionHeader > span,
+.applicationRevisionMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.applicationRevisionMeta {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.applicationRevisionMeta svg {
+  transition: transform 140ms ease;
+}
+
+.applicationRevisionMeta svg.isExpanded {
+  transform: rotate(180deg);
+}
+
+.applicationRevisionDetails {
+  gap: 18px;
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--surface-border);
+}
+
+.applicationRevisionSection {
+  gap: 10px;
+  padding-top: 16px;
+}
+
+.applicationRevisionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.applicationRevisionField {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: var(--surface-card-subtle);
+  overflow-wrap: anywhere;
+}
+
+.applicationRevisionTableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+}
+
+.applicationRevisionTable {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  background: var(--surface-card);
+}
+
+.applicationRevisionTable th,
+.applicationRevisionTable td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--surface-border);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.applicationRevisionTable th {
+  background: var(--surface-card-subtle);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.applicationRevisionTable tr:last-child td {
+  border-bottom: 0;
+}
+
+.applicationRevisionTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .settingsTagAddChip {
   display: inline-flex;
   align-items: center;

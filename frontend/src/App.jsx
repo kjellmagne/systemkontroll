@@ -957,17 +957,22 @@ export default function App() {
     };
   }
 
-  function buildApplicationRevisionRows(record, revisionDate) {
-    const criteriaRows = Array.isArray(record?.collectionValues?.review_criteria)
-      ? record.collectionValues.review_criteria
-      : [];
+  function createApplicationSnapshot(record) {
+    const collectionValues = structuredClone(record?.collectionValues ?? {});
+    delete collectionValues.application_revisions;
 
-    return criteriaRows.map((criterion) => ({
-      Kriterie: String(criterion?.label ?? criterion?.Kriterie ?? criterion?.key ?? "Uten navn").trim() || "Uten navn",
-      Poengsum: String(criterion?.score ?? criterion?.Poengsum ?? "").trim(),
-      Kommentar: String(criterion?.comment ?? criterion?.Kommentar ?? "").trim(),
-      Dato: revisionDate
-    }));
+    return {
+      fieldValues: structuredClone(record?.fieldValues ?? {}),
+      collectionValues,
+      meta: structuredClone(record?.meta ?? {})
+    };
+  }
+
+  function getNextApplicationRevisionNumber(revisions = []) {
+    return revisions.reduce((highestNumber, revision) => {
+      const nextNumber = Number(revision?.revisionNumber ?? 0);
+      return Number.isFinite(nextNumber) ? Math.max(highestNumber, nextNumber) : highestNumber;
+    }, 0) + 1;
   }
 
   async function handlePageAction(action) {
@@ -993,11 +998,6 @@ export default function App() {
       }
 
       const revisionDate = new Date().toISOString().slice(0, 10);
-      const revisionRows = buildApplicationRevisionRows(currentRecord, revisionDate);
-      if (!revisionRows.length) {
-        showToast("Ingen vurderingskriterier er registrert for applikasjonen.", "error");
-        return;
-      }
 
       const nextState = buildNextState((draftState) => {
         const targetRecord =
@@ -1009,20 +1009,29 @@ export default function App() {
 
         targetRecord.fieldValues = {
           ...(targetRecord.fieldValues ?? {}),
-          last_revised_date: revisionDate
+          last_revised_date: revisionDate,
+          last_revised_by: currentUser.name
         };
         targetRecord.collectionValues = targetRecord.collectionValues ?? {};
-        targetRecord.collectionValues.historical_reviews = [
-          ...revisionRows,
-          ...(Array.isArray(targetRecord.collectionValues.historical_reviews)
-            ? targetRecord.collectionValues.historical_reviews
-            : [])
+        const existingRevisions = Array.isArray(targetRecord.collectionValues.application_revisions)
+          ? targetRecord.collectionValues.application_revisions
+          : [];
+        const revisionNumber = getNextApplicationRevisionNumber(existingRevisions);
+        touchEntityRecordForSave(targetRecord, currentUser.name);
+        targetRecord.collectionValues.application_revisions = [
+          {
+            id: `REV-${Date.now()}`,
+            revisionNumber,
+            date: revisionDate,
+            revisedBy: currentUser.name,
+            snapshot: createApplicationSnapshot(targetRecord)
+          },
+          ...existingRevisions
         ];
         targetRecord.listSummary = {
           ...(targetRecord.listSummary ?? {}),
           lastRevised: revisionDate
         };
-        touchEntityRecordForSave(targetRecord, currentUser.name);
       }, { preferredEntityKey: "application", preferredRecordId: currentRecord.id });
 
       setAppState(nextState);
