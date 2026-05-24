@@ -373,54 +373,54 @@ export const topBarLinks = [
 
 export const organizationStructureData = [
   {
-    serviceArea: "Oppvekst og utdanning",
+    serviceArea: "Tjenesteområde A",
     organizations: [
       {
-        name: "Skole og læring",
-        departments: ["Eksempelskolen", "SFO", "Pedagogisk støtte"]
+        name: "Virksomhet A1",
+        departments: ["Avdeling A1", "Avdeling A2", "Avdeling A3"]
       },
       {
-        name: "Barnehage",
-        departments: ["Kommunale barnehager", "Spesialpedagogisk team", "Foreldreveiledning"]
+        name: "Virksomhet A2",
+        departments: ["Avdeling A4", "Avdeling A5", "Avdeling A6"]
       }
     ]
   },
   {
-    serviceArea: "Helse og velferd",
+    serviceArea: "Tjenesteområde B",
     organizations: [
       {
-        name: "Helse og omsorg",
-        departments: ["Hjemmetjenester", "Sykehjem", "Tildelingskontor"]
+        name: "Virksomhet B1",
+        departments: ["Avdeling B1", "Avdeling B2", "Avdeling B3"]
       },
       {
-        name: "Psykisk helse og rus",
-        departments: ["Oppfølgingsteam", "Lavterskeltilbud", "Koordinerende enhet"]
+        name: "Virksomhet B2",
+        departments: ["Avdeling B4", "Avdeling B5", "Avdeling B6"]
       }
     ]
   },
   {
-    serviceArea: "Samfunn og infrastruktur",
+    serviceArea: "Tjenesteområde C",
     organizations: [
       {
-        name: "Teknisk drift",
-        departments: ["Vei og park", "Vann og avløp", "Eiendomsdrift"]
+        name: "Virksomhet C1",
+        departments: ["Avdeling C1", "Avdeling C2", "Avdeling C3"]
       },
       {
-        name: "Plan og utvikling",
-        departments: ["Arealplan", "Byggesak", "Geodata"]
+        name: "Virksomhet C2",
+        departments: ["Avdeling C4", "Avdeling C5", "Avdeling C6"]
       }
     ]
   },
   {
-    serviceArea: "Stab og støtte",
+    serviceArea: "Tjenesteområde D",
     organizations: [
       {
-        name: "Organisasjon og HR",
-        departments: ["HR", "Lønn", "Arbeidsmiljø og utvikling"]
+        name: "Virksomhet D1",
+        departments: ["Avdeling D1", "Avdeling D2", "Avdeling D3"]
       },
       {
-        name: "Digitalisering og fellestjenester",
-        departments: ["IT-drift", "Informasjonssikkerhet", "Dokumentforvaltning"]
+        name: "Virksomhet D2",
+        departments: ["Avdeling D4", "Avdeling D5", "Avdeling D6"]
       }
     ]
   }
@@ -765,7 +765,7 @@ export const mockRecords = {
       processing_description: "Registrering og oppfølging av tiltak, vedtak og kommunikasjon i barnevernssaker.",
       controller: "Min organisasjon",
       data_protection_officer: "Kari Nordmann",
-      joint_controllers: ["NAV Troms og Finnmark"],
+      joint_controllers: ["Ekstern samarbeidspartner"],
       purposes: ["Saksbehandling", "Statistikkformål"],
       data_subject_categories: ["Barn", "Foresatte", "Verge"],
       personal_data_categories: ["Navn", "Kontaktopplysninger", "Straffbare forhold (artikkel 10)"],
@@ -841,10 +841,10 @@ export const mockRecords = {
         { Navn: "Kari Nordmann", Epost: "kari.nordmann@example.no" },
         { Navn: "Per Hansen", Epost: "per.hansen@example.no" }
       ],
-      system_owners: [{ Navn: "HR-avdelingen", Epost: "hr@example.no" }],
+      system_owners: [{ Navn: "Systemeier eksempel", Epost: "systemeier@example.no" }],
       controllers: [{ Navn: "Min organisasjon", Epost: "postmottak@example.no", Fra: "2024-01-01", Til: "Aktiv" }],
       controller_representatives: [{ Navn: "Kari Nordmann", Epost: "kari.nordmann@example.no" }],
-      joint_controllers: [{ Navn: "KS Digital", Epost: "kontakt@ks.no" }],
+      joint_controllers: [{ Navn: "Samarbeidspartner eksempel", Epost: "kontakt@example.no" }],
       data_protection_officers: [{ Navn: "Kari Nordmann", Epost: "kari.nordmann@example.no", Fra: "2023-09-01", Til: "Aktiv" }],
       processor_protocol_controllers: [{ Navn: "Min organisasjon", Epost: "postmottak@example.no" }],
       privacy_statements: [{ Fil: "standard-personvernerklaering.pdf", "Sist oppdatert": "2026-02-14", Type: "Standard erklæring" }],

@@ -1,81 +1,163 @@
 [
   {
-    "id": "service-area-1",
-    "serviceArea": "Stab og støtte",
-    "description": "Tjenesteområde. Leder: Ola Nordmann",
+    "id": "service-area-a",
+    "serviceArea": "Tjenesteområde A",
+    "description": "Eksempel på overordnet tjenesteområde.",
     "organizations": [
       {
-        "id": "organization-1",
-        "name": "Organisasjon og HR",
-        "description": "Virksomhet. Leder: Kari Nordmann",
+        "id": "organization-a1",
+        "name": "Virksomhet A1",
+        "description": "Eksempel på virksomhet.",
         "departments": [
           {
-            "id": "department-1",
-            "name": "HR",
-            "description": "Avdeling. Leder: Per Hansen"
+            "id": "department-a1",
+            "name": "Avdeling A1",
+            "description": "Eksempel på avdeling."
           },
           {
-            "id": "department-2",
-            "name": "Lønn",
-            "description": "Avdeling. Leder: Anne Olsen"
+            "id": "department-a2",
+            "name": "Avdeling A2",
+            "description": "Eksempel på avdeling."
           }
         ]
       },
       {
-        "id": "organization-2",
-        "name": "Digitalisering og fellestjenester",
-        "description": "Virksomhet. Leder: Ingrid Nilsen",
+        "id": "organization-a2",
+        "name": "Virksomhet A2",
+        "description": "Eksempel på virksomhet.",
         "departments": [
           {
-            "id": "department-3",
-            "name": "IT-drift",
-            "description": "Avdeling. Leder: Lars Larsen"
+            "id": "department-a3",
+            "name": "Avdeling A3",
+            "description": "Eksempel på avdeling."
           },
           {
-            "id": "department-4",
-            "name": "Informasjonssikkerhet",
-            "description": "Avdeling. Leder: Maria Johansen"
+            "id": "department-a4",
+            "name": "Avdeling A4",
+            "description": "Eksempel på avdeling."
           }
         ]
       }
     ]
   },
   {
-    "id": "service-area-2",
-    "serviceArea": "Tjenester",
-    "description": "Tjenesteområde. Leder: Nils Berg",
+    "id": "service-area-b",
+    "serviceArea": "Tjenesteområde B",
+    "description": "Eksempel på overordnet tjenesteområde.",
     "organizations": [
       {
-        "id": "organization-3",
-        "name": "Innbyggertjenester",
-        "description": "Virksomhet. Leder: Anne Olsen",
+        "id": "organization-b1",
+        "name": "Virksomhet B1",
+        "description": "Eksempel på virksomhet.",
         "departments": [
           {
-            "id": "department-5",
-            "name": "Servicekontor",
-            "description": "Avdeling. Leder: Kari Nordmann"
+            "id": "department-b1",
+            "name": "Avdeling B1",
+            "description": "Eksempel på avdeling."
           },
           {
-            "id": "department-6",
-            "name": "Dokumentforvaltning",
-            "description": "Avdeling. Leder: Per Hansen"
+            "id": "department-b2",
+            "name": "Avdeling B2",
+            "description": "Eksempel på avdeling."
           }
         ]
       },
       {
-        "id": "organization-4",
-        "name": "Fag og forvaltning",
-        "description": "Virksomhet. Leder: Maria Johansen",
+        "id": "organization-b2",
+        "name": "Virksomhet B2",
+        "description": "Eksempel på virksomhet.",
         "departments": [
           {
-            "id": "department-7",
-            "name": "Saksbehandling",
-            "description": "Avdeling. Leder: Ola Nordmann"
+            "id": "department-b3",
+            "name": "Avdeling B3",
+            "description": "Eksempel på avdeling."
           },
           {
-            "id": "department-8",
-            "name": "Kvalitet og internkontroll",
-            "description": "Avdeling. Leder: Ingrid Nilsen"
+            "id": "department-b4",
+            "name": "Avdeling B4",
+            "description": "Eksempel på avdeling."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "service-area-c",
+    "serviceArea": "Tjenesteområde C",
+    "description": "Eksempel på overordnet tjenesteområde.",
+    "organizations": [
+      {
+        "id": "organization-c1",
+        "name": "Virksomhet C1",
+        "description": "Eksempel på virksomhet.",
+        "departments": [
+          {
+            "id": "department-c1",
+            "name": "Avdeling C1",
+            "description": "Eksempel på avdeling."
+          },
+          {
+            "id": "department-c2",
+            "name": "Avdeling C2",
+            "description": "Eksempel på avdeling."
+          }
+        ]
+      },
+      {
+        "id": "organization-c2",
+        "name": "Virksomhet C2",
+        "description": "Eksempel på virksomhet.",
+        "departments": [
+          {
+            "id": "department-c3",
+            "name": "Avdeling C3",
+            "description": "Eksempel på avdeling."
+          },
+          {
+            "id": "department-c4",
+            "name": "Avdeling C4",
+            "description": "Eksempel på avdeling."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "service-area-d",
+    "serviceArea": "Tjenesteområde D",
+    "description": "Eksempel på overordnet tjenesteområde.",
+    "organizations": [
+      {
+        "id": "organization-d1",
+        "name": "Virksomhet D1",
+        "description": "Eksempel på virksomhet.",
+        "departments": [
+          {
+            "id": "department-d1",
+            "name": "Avdeling D1",
+            "description": "Eksempel på avdeling."
+          },
+          {
+            "id": "department-d2",
+            "name": "Avdeling D2",
+            "description": "Eksempel på avdeling."
+          }
+        ]
+      },
+      {
+        "id": "organization-d2",
+        "name": "Virksomhet D2",
+        "description": "Eksempel på virksomhet.",
+        "departments": [
+          {
+            "id": "department-d3",
+            "name": "Avdeling D3",
+            "description": "Eksempel på avdeling."
+          },
+          {
+            "id": "department-d4",
+            "name": "Avdeling D4",
+            "description": "Eksempel på avdeling."
           }
         ]
       }
