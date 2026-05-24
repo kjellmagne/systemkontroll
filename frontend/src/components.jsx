@@ -2681,10 +2681,7 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
               <Body1>{isApiKeysLoading ? "Laster API-nøkler..." : `${apiKeys.length} nøkler registrert`}</Body1>
             </div>
             <div className="inlineActionGroup">
-              <Button appearance="secondary" onClick={loadApiKeys}>
-                Oppdater
-              </Button>
-              <Button appearance="primary" icon={<AddRegular />} onClick={createApiKey}>
+              <Button appearance="primary" onClick={createApiKey}>
                 Ny API-nøkkel
               </Button>
             </div>
@@ -2747,7 +2744,7 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
               <Title3>Brukere</Title3>
               <Body1>{isUsersLoading ? "Laster brukere..." : `${users.length} brukere registrert`}</Body1>
             </div>
-            <Button appearance="primary" icon={<AddRegular />} onClick={openNewUserDialog}>
+            <Button appearance="primary" onClick={openNewUserDialog}>
               Ny bruker
             </Button>
           </div>
@@ -3080,9 +3077,6 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
                 setInlineCatalogAdd({ key: card.key, value: "", description: "", color: "blue" });
               }}
             >
-              <span className="labelChipAddIcon" aria-hidden="true">
-                <AddRegular />
-              </span>
               <span>Ny {card.singular}</span>
             </button>
           </div>
