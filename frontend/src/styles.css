@@ -397,6 +397,10 @@ body:has(.shell[data-appearance="dark"]) {
   background: var(--surface-card);
 }
 
+.settingsWindowChrome .fui-Button {
+  flex-shrink: 0;
+}
+
 .settingsWindowBody {
   min-height: 0;
   overflow: auto;
@@ -776,6 +780,9 @@ body:has(.shell[data-appearance="dark"]) {
 }
 
 .settingsContentPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
   min-width: 0;
   min-height: 0;
   overflow: auto;
@@ -783,7 +790,7 @@ body:has(.shell[data-appearance="dark"]) {
 }
 
 .settingsContentPanel > * + * {
-  margin-top: 18px;
+  margin-top: 0;
 }
 
 .settingsEmptyState {
@@ -797,17 +804,17 @@ body:has(.shell[data-appearance="dark"]) {
 }
 
 .userAdminGrid {
-  display: grid;
-  grid-template-columns: minmax(340px, 0.9fr) minmax(420px, 1.1fr);
+  display: flex;
+  flex-direction: column;
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .apiKeysGrid {
-  display: grid;
-  grid-template-columns: minmax(320px, 0.8fr) minmax(500px, 1.2fr);
+  display: flex;
+  flex-direction: column;
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .userAdminList,
@@ -844,6 +851,7 @@ body:has(.shell[data-appearance="dark"]) {
 
 .userAdminForm {
   gap: 14px;
+  max-width: 560px;
 }
 
 .apiTokenText textarea {
@@ -868,6 +876,13 @@ body:has(.shell[data-appearance="dark"]) {
 }
 
 .settingsTagsEmptyState {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 12px 14px;
+  border: 1px dashed var(--surface-border-strong);
+  border-radius: 8px;
+  background: var(--surface-card-subtle);
   border-style: dashed;
   width: 100%;
 }
@@ -2139,13 +2154,14 @@ body:has(.shell[data-appearance="dark"]) {
 }
 
 .settingsThemeGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 20px;
+  max-width: 640px;
 }
 
 .settingsThemeField--wide {
-  grid-column: 1 / -1;
+  width: 100%;
 }
 
 .themeSwatchGrid {
@@ -2190,8 +2206,13 @@ body:has(.shell[data-appearance="dark"]) {
 }
 
 .themePreviewCard {
+  display: flex;
+  flex-direction: column;
   gap: 14px;
-  border-style: dashed;
+  padding: 16px;
+  border: 1px dashed var(--surface-border-strong);
+  border-radius: 8px;
+  background: var(--surface-card-subtle);
 }
 
 .themePreviewRow {

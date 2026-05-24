@@ -2978,9 +2978,9 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
               </div>
             ))
           ) : (
-            <Card appearance="subtle" className="settingsTagsEmptyState">
+            <div className="settingsTagsEmptyState">
               <Body1>Ingen {card.title.toLowerCase()} registrert ennå.</Body1>
-            </Card>
+            </div>
           )}
 
           <div className={`dialogTagCreateAnchor ${isAdding ? "isOpen" : ""}`}>
@@ -3023,9 +3023,11 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
           <Title2>{activeSettingsItem.label}</Title2>
           <Body1>{activeSettingsItem.description}</Body1>
         </div>
-        <Badge appearance={isAccessControlledSettingsTab && isUserAdmin ? "filled" : "outline"}>
-          {isAccessControlledSettingsTab ? (isUserAdmin ? "Administrator" : adminAccessStatus === "checking" ? "Kontrollerer tilgang" : "Standard tilgang") : "Lokal innstilling"}
-        </Badge>
+        {isAccessControlledSettingsTab ? (
+          <Badge appearance={isUserAdmin ? "filled" : "outline"}>
+            {isUserAdmin ? "Administrator" : adminAccessStatus === "checking" ? "Kontrollerer tilgang" : "Standard tilgang"}
+          </Badge>
+        ) : null}
       </header>
       <div className="settingsWorkspace">
         <nav className="settingsSideNav" aria-label="Innstillinger">
@@ -3049,10 +3051,7 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
         <div className="settingsContentPanel">
           {activeSettingsTab === "catalogs" ? (
             <>
-              <div className="twoColumnGrid">
-                {cards.map((card) => renderSettingsChipCard(card))}
-              </div>
-
+              {cards.map((card) => renderSettingsChipCard(card))}
               {renderSettingsChipCard(tagsCard, "settingsCard--fullWidth")}
 
               {activeInlineCard && inlineCatalogPanelPosition && typeof document !== "undefined"
@@ -3183,7 +3182,7 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
                 </Field>
               </div>
 
-              <Card appearance="subtle" className="themePreviewCard">
+              <div className="themePreviewCard">
                 <div className="headerStack compact">
                   <Text weight="semibold">Forhåndsvisning</Text>
                   <Body1>Denne fanen gir et sentralt sted for å styre visuelle valg. Den kan senere kobles til mer komplett tema- og rettighetsstyring.</Body1>
@@ -3193,7 +3192,7 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
                   <Tag className="labelChip">Eksempelmerkelapp</Tag>
                   <Button appearance="primary">Primær handling</Button>
                 </div>
-              </Card>
+              </div>
             </Card>
           )}
         </div>

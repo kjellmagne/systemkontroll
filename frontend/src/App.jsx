@@ -20,6 +20,7 @@ import {
   BranchRegular,
   BuildingRegular,
   DatabaseRegular,
+  DismissRegular,
   GridRegular,
   OrganizationRegular,
   QuestionCircleRegular,
@@ -1531,7 +1532,7 @@ export default function App() {
             >
               <div className="settingsWindowChrome">
                 <Text weight="semibold">Innstillinger</Text>
-                <Button appearance="subtle" onClick={() => setIsSettingsWindowOpen(false)}>
+                <Button appearance="secondary" icon={<DismissRegular />} onClick={() => setIsSettingsWindowOpen(false)}>
                   Lukk
                 </Button>
               </div>
