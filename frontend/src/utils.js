@@ -470,6 +470,7 @@ export function createInventoryItemFromRecord(entityKey, record) {
   const fieldValues = record?.fieldValues ?? {};
   const listSummary = record?.listSummary ?? {};
   const lastUpdated = record?.meta?.lastUpdated ?? listSummary.lastUpdated ?? "";
+  const lastRevised = coerceTrimmedString(fieldValues.last_revised_date, listSummary.lastRevised ?? "");
 
   switch (entityKey) {
     case "application":
@@ -481,6 +482,7 @@ export function createInventoryItemFromRecord(entityKey, record) {
         version: coerceTrimmedString(fieldValues.version, listSummary.version ?? ""),
         status: coerceTrimmedString(fieldValues.lifecycle_status, listSummary.status ?? ""),
         criticality: coerceTrimmedString(fieldValues.criticality, listSummary.criticality ?? ""),
+        lastRevised,
         lastUpdated,
         systemOwner: coerceTrimmedString(fieldValues.system_owner, listSummary.systemOwner ?? "")
       };
@@ -776,7 +778,7 @@ export function filterInventoryItems(screen, items, searchValue, datasetFilters)
 export function renderInventoryCells(screen, item) {
   switch (screen.entityKey) {
     case "application":
-      return [item.name, item.vendor, item.version, item.status, item.criticality, item.lastUpdated];
+      return [item.name, item.vendor, item.version, item.status, item.criticality, item.lastRevised, item.lastUpdated];
     case "dataset":
       return [
         item.name,
@@ -1944,6 +1946,28 @@ function ensureCollectionArray(record, collectionKey) {
   return record.collectionValues[collectionKey];
 }
 
+function normalizeApplicationRevisionMetadata(record) {
+  if (!record || typeof record !== "object") {
+    return;
+  }
+
+  record.fieldValues = record.fieldValues ?? {};
+  const revisionRows = ensureCollectionArray(record, "historical_reviews");
+  if (!record.fieldValues.last_revised_date) {
+    const latestRevisionDate = revisionRows
+      .map((row) => coerceTrimmedString(row?.Dato ?? row?.date, ""))
+      .filter(Boolean)
+      .sort()
+      .at(-1);
+    record.fieldValues.last_revised_date = latestRevisionDate ?? "";
+  }
+
+  record.listSummary = {
+    ...(record.listSummary ?? {}),
+    lastRevised: coerceTrimmedString(record.fieldValues.last_revised_date, record.listSummary?.lastRevised ?? "")
+  };
+}
+
 function orderMirroredCollectionEntries(existingEntries = [], nextEntriesById = new Map(), resolveEntryId) {
   const orderedEntries = [];
   const seenIds = new Set();
@@ -2550,6 +2574,7 @@ export function normalizeAppState(state, options = {}) {
   if (state.records.application_draft) {
     state.records.application_draft.recordKey = "application_draft";
     state.records.application_draft.entityKey = "application";
+    normalizeApplicationRevisionMetadata(state.records.application_draft);
   }
 
   if (state.records.dataset_draft) {
@@ -2584,6 +2609,7 @@ export function normalizeAppState(state, options = {}) {
   const datasetRecords = state.entities?.dataset ?? [];
   const applicationRecords = state.entities?.application ?? [];
   const processingActivityRecords = state.entities?.controller_protocol ?? [];
+  applicationRecords.forEach((record) => normalizeApplicationRevisionMetadata(record));
   (state.entities?.application ?? []).forEach((record) => normalizeApplicationDatasetRelations(record, datasetRecords));
   (state.entities?.application ?? []).forEach((record) => normalizeRelatedApplications(record, applicationRecords));
   normalizeApplicationDatasetRelations(state.records?.application_draft, datasetRecords);

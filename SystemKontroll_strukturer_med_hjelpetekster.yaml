@@ -72,6 +72,14 @@ structures:
                 option_source: organization_role.system_owner
                 help_text_mode: raw
                 help_text: "Systemeier for applikasjonen. Systemeiere blir lagt til og endret under \"Min organisasjon\" av en organisasjonsadministrator."
+              - key: last_revised_date
+                label: "Sist revidert"
+                type: date
+                required: false
+                control: input_text
+                placeholder: "Velg dato"
+                help_text_mode: raw
+                help_text: "Dato for siste fullførte revisjon av applikasjonen."
           - key: data_processor_agreements
             label: "Databehandleravtale"
             help_text: null
@@ -356,12 +364,12 @@ structures:
                   Konsekvenser:
                   Løsninger og komponenter må være modulariserte slik at de kan opp- og nedskaleres etter at de er satt i drift, og organisatoriske forhold som avtaler og brukerstøtte må kunne skaleres tilsvarende.
           - key: historical_reviews
-            label: "Tidligere vurderinger"
+            label: "Tidligere revisjoner"
             help_text: null
             help_text_status: not_visible_in_supplied_html
             collections:
               - key: historical_reviews
-                label: "Tidligere vurderinger"
+                label: "Tidligere revisjoner"
                 item_type: table
                 columns:
                   - "Kriterie"

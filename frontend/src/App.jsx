@@ -957,6 +957,19 @@ export default function App() {
     };
   }
 
+  function buildApplicationRevisionRows(record, revisionDate) {
+    const criteriaRows = Array.isArray(record?.collectionValues?.review_criteria)
+      ? record.collectionValues.review_criteria
+      : [];
+
+    return criteriaRows.map((criterion) => ({
+      Kriterie: String(criterion?.label ?? criterion?.Kriterie ?? criterion?.key ?? "Uten navn").trim() || "Uten navn",
+      Poengsum: String(criterion?.score ?? criterion?.Poengsum ?? "").trim(),
+      Kommentar: String(criterion?.comment ?? criterion?.Kommentar ?? "").trim(),
+      Dato: revisionDate
+    }));
+  }
+
   async function handlePageAction(action) {
     if (!action) {
       return;
@@ -970,6 +983,50 @@ export default function App() {
           : "Kunne ikke åpne PDF-rapporten. Sjekk at popup-vinduer er tillatt.",
         didOpenReport ? "info" : "error"
       );
+      return;
+    }
+
+    if (action.actionId === "create-application-revision") {
+      if (currentScreen?.entityKey !== "application" || !currentRecord?.id) {
+        showToast("Revisjon er bare tilgjengelig for applikasjoner.", "error");
+        return;
+      }
+
+      const revisionDate = new Date().toISOString().slice(0, 10);
+      const revisionRows = buildApplicationRevisionRows(currentRecord, revisionDate);
+      if (!revisionRows.length) {
+        showToast("Ingen vurderingskriterier er registrert for applikasjonen.", "error");
+        return;
+      }
+
+      const nextState = buildNextState((draftState) => {
+        const targetRecord =
+          (currentScreen.recordKey && draftState.records?.[currentScreen.recordKey]) ||
+          getEntityRecord(draftState, "application", currentRecord.id);
+        if (!targetRecord) {
+          return;
+        }
+
+        targetRecord.fieldValues = {
+          ...(targetRecord.fieldValues ?? {}),
+          last_revised_date: revisionDate
+        };
+        targetRecord.collectionValues = targetRecord.collectionValues ?? {};
+        targetRecord.collectionValues.historical_reviews = [
+          ...revisionRows,
+          ...(Array.isArray(targetRecord.collectionValues.historical_reviews)
+            ? targetRecord.collectionValues.historical_reviews
+            : [])
+        ];
+        targetRecord.listSummary = {
+          ...(targetRecord.listSummary ?? {}),
+          lastRevised: revisionDate
+        };
+        touchEntityRecordForSave(targetRecord, currentUser.name);
+      }, { preferredEntityKey: "application", preferredRecordId: currentRecord.id });
+
+      setAppState(nextState);
+      await persistState(nextState, "Ny revisjon er lagret.");
       return;
     }
 
@@ -1015,6 +1072,7 @@ export default function App() {
               status: lifecycleStatus,
               criticality: criticalityValue,
               systemOwner: ownerValue,
+              lastRevised: draftFields.last_revised_date ?? "",
               lastUpdated: today
             }
           });

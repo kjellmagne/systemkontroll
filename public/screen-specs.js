@@ -596,6 +596,7 @@ export const mockRecords = {
         "Visma Enterprise HRM er en komplett løsning for personaladministrasjon, lønnskjøring og fraværshåndtering. Systemet er integrert med statlige registre og støtter komplekse tariffavtaler.",
       system_responsible: "Ola Nordmann",
       system_owner: "HR-Avdelingen (HR-DIR)",
+      last_revised_date: "2025-11-18",
       not_relevant_for_application: false,
       accessibility_statement_required: true,
       has_accessibility_statement: false,
@@ -934,7 +935,7 @@ export const screenRegistry = [
     navKey: "application",
     title: "Applikasjoner",
     searchPlaceholder: "Søk i applikasjoner, leverandør eller systemeier...",
-    description: "Oversikt over registrerte applikasjoner med status, kritikalitet, eierskap og siste oppdatering.",
+    description: "Oversikt over registrerte applikasjoner med status, kritikalitet, eierskap og siste revisjon.",
     actions: [{ label: "Ny applikasjon", icon: "add", actionId: "add-application" }],
     columns: [
       { key: "name", label: "Navn" },
@@ -942,6 +943,7 @@ export const screenRegistry = [
       { key: "version", label: "Versjon" },
       { key: "status", label: "Status" },
       { key: "criticality", label: "Kritikalitet" },
+      { key: "lastRevised", label: "Sist revidert" },
       { key: "lastUpdated", label: "Sist oppdatert" }
     ]
   },
@@ -1026,7 +1028,10 @@ export const screenRegistry = [
     recordKey: "application",
     title: "Visma Ent. HRM",
     tabSource: "model",
-    actions: [{ label: "Logg", icon: "history", tone: "ghost" }, { label: "Lagre endringer", icon: "save", tone: "primary" }],
+    actions: [
+      { label: "Ny revisjon", icon: "history", tone: "ghost", actionId: "create-application-revision" },
+      { label: "Lagre endringer", icon: "save", tone: "primary" }
+    ],
     sectionLayouts: {
       general_information: { span: 12, icon: "info", tone: "default" },
       accessibility: { span: 12, icon: "accessibility", tone: "accent", callout: "accessibility" },
