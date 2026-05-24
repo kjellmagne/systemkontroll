@@ -383,7 +383,7 @@ body:has(.shell[data-appearance="dark"]) {
   overflow: hidden;
   border: 1px solid var(--surface-border);
   border-radius: 8px;
-  background: var(--surface-card, #ffffff);
+  background: var(--app-bg, #f3f2f1);
   box-shadow: 0 28px 90px rgba(15, 23, 42, 0.46);
 }
 
@@ -405,7 +405,7 @@ body:has(.shell[data-appearance="dark"]) {
   min-height: 0;
   overflow: auto;
   padding: 0;
-  background: color-mix(in srgb, var(--surface-card-subtle) 70%, var(--surface-card) 30%);
+  background: var(--app-bg, #f3f2f1);
 }
 
 .loadingShell {
@@ -787,6 +787,7 @@ body:has(.shell[data-appearance="dark"]) {
   min-height: 0;
   overflow: auto;
   padding: 20px 22px 24px;
+  background: var(--app-bg, #f3f2f1);
 }
 
 .settingsContentPanel > * + * {

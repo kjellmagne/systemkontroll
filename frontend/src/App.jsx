@@ -1532,7 +1532,7 @@ export default function App() {
             >
               <div className="settingsWindowChrome">
                 <Text weight="semibold">Innstillinger</Text>
-                <Button appearance="secondary" icon={<DismissRegular />} onClick={() => setIsSettingsWindowOpen(false)}>
+                <Button appearance="primary" icon={<DismissRegular />} onClick={() => setIsSettingsWindowOpen(false)}>
                   Lukk
                 </Button>
               </div>
