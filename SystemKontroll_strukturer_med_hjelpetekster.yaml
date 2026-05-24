@@ -255,6 +255,30 @@ structures:
                 required: false
                 control: textarea
                 placeholder: "Beskriv backup, restore-test, RPO/RTO og avhengigheter"
+          - key: criticality
+            label: "Kritikalitet"
+            fields:
+              - key: criticality
+                label: "Kritikalitet"
+                type: enum
+                required: false
+                control: select
+                help_text_mode: raw
+                help_text: |-
+                  Kritikalitet beskriver hvor alvorlige konsekvenser det får for organisasjonen dersom applikasjonen ikke er tilgjengelig, mister integritet, eller behandler informasjon feil.
+
+                  Lav: Begrenset påvirkning. Arbeidet kan normalt fortsette med små ulemper, manuelle rutiner eller kortvarig forsinkelse.
+
+                  Middels: Merkbar påvirkning på en tjeneste, avdeling eller arbeidsprosess. Feil eller nedetid kan gi forsinkelser, ekstraarbeid eller redusert kvalitet, men er vanligvis håndterbart over kort tid.
+
+                  Høy: Stor påvirkning på viktige tjenester, mange brukere, lovpålagte oppgaver, økonomi eller informasjonssikkerhet. Feil eller nedetid krever rask oppfølging og tydelige beredskaps-/gjenopprettingstiltak.
+
+                  Kritisk: Svært alvorlig påvirkning på samfunnskritiske eller virksomhetskritiske tjenester. Feil, tap av data eller langvarig nedetid kan gi vesentlig skade for innbyggere, ansatte, omdømme, lovoppfyllelse eller driftsevne.
+                options:
+                  - "Lav"
+                  - "Middels"
+                  - "Høy"
+                  - "Kritisk"
           - key: data_processor_agreements
             label: "Databehandleravtale"
             help_text: null
@@ -297,21 +321,6 @@ structures:
                   - "Tjenesteområde"
                   - "Virksomhet"
                   - "Avdeling"
-          - key: criticality
-            label: "Kritikalitet"
-            fields:
-              - key: criticality
-                label: "Kritikalitet"
-                type: enum
-                required: false
-                control: select
-                help_text: null
-                help_text_status: not_visible_in_supplied_html
-                options:
-                  - "Lav"
-                  - "Middels"
-                  - "Høy"
-                  - "Kritisk"
 
       - key: architecture
         label: "Arkitektur"
