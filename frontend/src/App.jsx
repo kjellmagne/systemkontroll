@@ -1588,7 +1588,9 @@ export default function App() {
               role="dialog"
             >
               <div className="settingsWindowChrome">
-                <Text weight="semibold">Innstillinger</Text>
+                <Text as="h2" className="settingsWindowTitle" weight="semibold">
+                  Innstillinger
+                </Text>
                 <Button appearance="primary" onClick={() => setIsSettingsWindowOpen(false)}>
                   Lukk
                 </Button>

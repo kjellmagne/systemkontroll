@@ -401,6 +401,12 @@ body:has(.shell[data-appearance="dark"]) {
   flex-shrink: 0;
 }
 
+.settingsWindowTitle {
+  margin: 0;
+  font-size: 22px;
+  line-height: 30px;
+}
+
 .settingsWindowBody {
   display: flex;
   flex-direction: column;

@@ -2409,10 +2409,10 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
     { value: "disabled", label: "Deaktivert" }
   ];
   const settingsNavItems = [
-    { key: "catalogs", label: "Registere" },
-    { key: "users", label: "Brukere" },
-    { key: "apiKeys", label: "API-nøkler" },
-    { key: "themes", label: "Tema" }
+    { key: "catalogs", label: "Kategorier og klassifisering", icon: TagRegular },
+    { key: "users", label: "Brukere", icon: PeopleRegular },
+    { key: "apiKeys", label: "API-nøkler", icon: CodeRegular },
+    { key: "themes", label: "Tema", icon: SparkleRegular }
   ];
 
   React.useEffect(() => {
@@ -3094,17 +3094,21 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
               Innstillinger
             </Text>
             <div className="navStack">
-              {settingsNavItems.map((item) => (
-                <Button
-                  key={item.key}
-                  appearance="subtle"
-                  size="large"
-                  className={`navButton ${activeSettingsTab === item.key ? "isActive" : ""}`}
-                  onClick={() => setActiveSettingsTab(item.key)}
-                >
-                  {item.label}
-                </Button>
-              ))}
+              {settingsNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Button
+                    key={item.key}
+                    appearance="subtle"
+                    size="large"
+                    icon={<Icon />}
+                    className={`navButton ${activeSettingsTab === item.key ? "isActive" : ""}`}
+                    onClick={() => setActiveSettingsTab(item.key)}
+                  >
+                    {item.label}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         </nav>
