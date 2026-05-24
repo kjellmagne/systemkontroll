@@ -2785,62 +2785,55 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
         </Card>
 
         {selectedUser ? (
-        <Card className="settingsCard userAdminEditor" appearance="filled-alternative">
-          <div className="headerStack compact">
-            <Title3>Rediger bruker</Title3>
-            <Body1>Lokale brukere kan logge inn med brukernavn eller e-post. Entra og Google matcher brukeren på e-postadresse.</Body1>
-          </div>
-          <div className="userAdminForm">
-            <Field label="Navn">
-              <Input value={userForm.displayName} onChange={(event) => updateUserForm("displayName", event.target.value)} />
-            </Field>
-            <Field label="E-post">
-              <Input value={userForm.email} onChange={(event) => updateUserForm("email", event.target.value)} />
-            </Field>
-            <Field label="Brukernavn">
-              <Input value={userForm.username} onChange={(event) => updateUserForm("username", event.target.value)} />
-            </Field>
-            <Field label="Rolle">
-              <Dropdown value={roleLabel(userForm.role)} selectedOptions={[userForm.role]} onOptionSelect={(_event, data) => updateUserForm("role", data.optionValue)}>
-                <Option value="admin">Administrator</Option>
-                <Option value="editor">Redaktør</Option>
-                <Option value="viewer">Lesetilgang</Option>
-              </Dropdown>
-            </Field>
-            <Field label="Status">
-              <Dropdown value={userForm.status === "active" ? "Aktiv" : "Deaktivert"} selectedOptions={[userForm.status]} onOptionSelect={(_event, data) => updateUserForm("status", data.optionValue)}>
-                <Option value="active">Aktiv</Option>
-                <Option value="disabled">Deaktivert</Option>
-              </Dropdown>
-            </Field>
-            <Checkbox
-              checked={userForm.localEnabled}
-              label="Tillat lokal innlogging"
-              onChange={(_event, data) => updateUserForm("localEnabled", Boolean(data.checked))}
-            />
-            <Button appearance="primary" onClick={saveUser}>
-              Lagre bruker
-            </Button>
-          </div>
-
-          <Divider />
-          <div className="userAdminForm">
-            <Field label="Nytt lokalt passord">
-              <Input type="password" value={passwordDraft} onChange={(event) => setPasswordDraft(event.target.value)} />
-            </Field>
-            <Button appearance="secondary" disabled={!passwordDraft} onClick={resetUserPassword}>
-              Oppdater passord
-            </Button>
-          </div>
-        </Card>
-        ) : (
-          <div className="settingsEmptyState">
+          <Card className="settingsCard userAdminEditor" appearance="filled-alternative">
             <div className="headerStack compact">
-              <Title3>Velg bruker</Title3>
-              <Body1>Velg en bruker i listen for å redigere, eller opprett en ny bruker via knappen over.</Body1>
+              <Title3>Rediger bruker</Title3>
+              <Body1>Lokale brukere kan logge inn med brukernavn eller e-post. Entra og Google matcher brukeren på e-postadresse.</Body1>
             </div>
-          </div>
-        )}
+            <div className="userAdminForm">
+              <Field label="Navn">
+                <Input value={userForm.displayName} onChange={(event) => updateUserForm("displayName", event.target.value)} />
+              </Field>
+              <Field label="E-post">
+                <Input value={userForm.email} onChange={(event) => updateUserForm("email", event.target.value)} />
+              </Field>
+              <Field label="Brukernavn">
+                <Input value={userForm.username} onChange={(event) => updateUserForm("username", event.target.value)} />
+              </Field>
+              <Field label="Rolle">
+                <Dropdown value={roleLabel(userForm.role)} selectedOptions={[userForm.role]} onOptionSelect={(_event, data) => updateUserForm("role", data.optionValue)}>
+                  <Option value="admin">Administrator</Option>
+                  <Option value="editor">Redaktør</Option>
+                  <Option value="viewer">Lesetilgang</Option>
+                </Dropdown>
+              </Field>
+              <Field label="Status">
+                <Dropdown value={userForm.status === "active" ? "Aktiv" : "Deaktivert"} selectedOptions={[userForm.status]} onOptionSelect={(_event, data) => updateUserForm("status", data.optionValue)}>
+                  <Option value="active">Aktiv</Option>
+                  <Option value="disabled">Deaktivert</Option>
+                </Dropdown>
+              </Field>
+              <Checkbox
+                checked={userForm.localEnabled}
+                label="Tillat lokal innlogging"
+                onChange={(_event, data) => updateUserForm("localEnabled", Boolean(data.checked))}
+              />
+              <Button appearance="primary" onClick={saveUser}>
+                Lagre bruker
+              </Button>
+            </div>
+
+            <Divider />
+            <div className="userAdminForm">
+              <Field label="Nytt lokalt passord">
+                <Input type="password" value={passwordDraft} onChange={(event) => setPasswordDraft(event.target.value)} />
+              </Field>
+              <Button appearance="secondary" disabled={!passwordDraft} onClick={resetUserPassword}>
+                Oppdater passord
+              </Button>
+            </div>
+          </Card>
+        ) : null}
       </div>
     );
   }
