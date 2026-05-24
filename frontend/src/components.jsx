@@ -2414,8 +2414,6 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
     { key: "apiKeys", label: "API-nøkler", description: "Integrasjoner og tokens", icon: ShieldRegular },
     { key: "themes", label: "Tema", description: "Utseende og farger", icon: SparkleRegular }
   ];
-  const activeSettingsItem = settingsNavItems.find((item) => item.key === activeSettingsTab) ?? settingsNavItems[0];
-  const isAccessControlledSettingsTab = ["users", "apiKeys"].includes(activeSettingsTab);
 
   React.useEffect(() => {
     setAdminAccessStatus(isSessionAdmin ? "granted" : "checking");
@@ -3102,20 +3100,6 @@ function SettingsPage({ appState, authSession, currentScreen, onAction, openDial
 
   return (
     <div className="settingsPageStack">
-      <header className="settingsHeader">
-        <div className="headerStack compact">
-          <Text size={200} weight="semibold" className="sectionLabel">
-            Innstillinger
-          </Text>
-          <Title2>{activeSettingsItem.label}</Title2>
-          <Body1>{activeSettingsItem.description}</Body1>
-        </div>
-        {isAccessControlledSettingsTab ? (
-          <Badge appearance={isUserAdmin ? "filled" : "outline"}>
-            {isUserAdmin ? "Administrator" : adminAccessStatus === "checking" ? "Kontrollerer tilgang" : "Standard tilgang"}
-          </Badge>
-        ) : null}
-      </header>
       <div className="settingsWorkspace">
         <nav className="settingsSideNav" aria-label="Innstillinger">
           {settingsNavItems.map((item) => (

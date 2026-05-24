@@ -691,16 +691,6 @@ body:has(.shell[data-appearance="dark"]) {
   min-height: 0;
 }
 
-.settingsHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 22px 24px 18px;
-  border-bottom: 1px solid var(--surface-border);
-  background: var(--surface-card);
-}
-
 .settingsWorkspace {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
@@ -3101,11 +3091,6 @@ body:has(.shell[data-appearance="dark"]) {
 
   .settingsWindowBody {
     padding: 0;
-  }
-
-  .settingsHeader {
-    flex-direction: column;
-    padding: 18px;
   }
 
   .settingsContentPanel {
